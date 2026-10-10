@@ -187,7 +187,8 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Shares the existing `my-volunteers` function to keep the Vercel Hobby route count stable.
 
 - `GET /api/my-volunteers?resource=home-pooja`
-  - Returns the authenticated family's bookings plus the privacy-safe booking calendar.
+  - Returns the authenticated family's bookings plus the authenticated booking calendar.
+  - For authenticated Board/Admin preview users, booked calendar dates include the requester's name, scheduled time, and address.
   - Claims unlinked public bookings whose verified email matches the signed-in member.
 
 - `POST /api/my-volunteers?resource=home-pooja`
@@ -205,6 +206,7 @@ The old Supabase magic-link callback route was removed after switching to passco
 
 - `GET /api/admin-members?resource=home-pooja`
   - Board/Admin-only list of Home Pooja bookings, blocks, and calendar state.
+  - The administrative calendar includes each booked requester's name, scheduled time, and address.
 
 - `POST /api/admin-members?resource=home-pooja`
   - Board/Admin-only creation of a blocked calendar date with a reason; any valid date can be blocked for a special AAYSSA event even when Home Pooja is not normally offered that day.
@@ -243,6 +245,7 @@ Member portal (`public/index.html`) includes:
 - Home Pooja booking card:
   - Spans the full member-portal content width instead of sharing a two-column row with another card.
   - Shows the shared availability calendar and the family's confirmed bookings.
+  - Booked dates show the requester's name, scheduled time, and address; the standalone public calendar does not receive these private fields.
   - Labels blocked dates as `AAYSSA Event` in the member-facing calendar; administrative views continue to use `Blocked` terminology.
   - Presents availability in a responsive month-at-a-time calendar with Previous/Next navigation and privacy-safe Available, Booked, and Blocked states.
   - Allows an authenticated family to book an available date immediately on a first-come, first-served basis.

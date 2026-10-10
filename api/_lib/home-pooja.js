@@ -193,7 +193,10 @@ export async function handleMemberHomePooja(req, res) {
           fetchFamilyBookings(
             auth.memberRow.id
           ),
-          buildPublicCalendar(req.query)
+          buildPublicCalendar(
+            req.query,
+            { includeBookingDetails: true }
+          )
         ]);
 
       return res.status(200).json({
@@ -261,7 +264,10 @@ export async function handleAdminHomePooja(req, res) {
       const [entries, calendar] =
         await Promise.all([
           fetchAllEntries(),
-          buildPublicCalendar(req.query)
+          buildPublicCalendar(
+            req.query,
+            { includeBookingDetails: true }
+          )
         ]);
 
       return res.status(200).json({
@@ -558,7 +564,10 @@ async function getUnavailableReason(
   return "";
 }
 
-async function buildPublicCalendar(query = {}) {
+async function buildPublicCalendar(
+  query = {},
+  { includeBookingDetails = false } = {}
+) {
   const from =
     isDateString(query?.from)
       ? query.from
@@ -604,7 +613,17 @@ async function buildPublicCalendar(query = {}) {
     ) {
       state.set(entry.poojaDate, {
         status: "Booked",
-        reason: "Home Pooja booked"
+        reason: "Home Pooja booked",
+        ...(includeBookingDetails
+          ? {
+              requesterName:
+                entry.requesterName,
+              bookingTime:
+                entry.preferredTime,
+              poojaAddress:
+                entry.poojaAddress
+            }
+          : {})
       });
     }
 
@@ -656,7 +675,18 @@ async function buildPublicCalendar(query = {}) {
       reason:
         defaultReason ||
         current?.reason ||
-        ""
+        "",
+      ...(includeBookingDetails &&
+      current?.status === "Booked"
+        ? {
+            requesterName:
+              current.requesterName || "",
+            bookingTime:
+              current.bookingTime || time || "",
+            poojaAddress:
+              current.poojaAddress || ""
+          }
+        : {})
     });
   }
 

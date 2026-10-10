@@ -506,6 +506,7 @@
       border: 1px solid #e3ded4;
       border-radius: 12px;
       background: #fff;
+      overflow-x: auto;
     }
 
     .pooja-calendar-month h3 {
@@ -518,6 +519,7 @@
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 5px;
+      min-width: 700px;
     }
 
     .pooja-calendar-weekday {
@@ -556,10 +558,16 @@
     }
 
     .pooja-calendar-day.booked {
+      min-height: 105px;
       border-color: #e3b95e;
       background: #fff0c9;
       color: #704300;
       font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .pooja-calendar-booking-address {
+      font-weight: 500;
     }
 
     .pooja-calendar-day.blocked {
@@ -2429,11 +2437,39 @@
                 .replace("9:00 AM–12:00 PM", "9–12")
               : "";
 
+        const bookedDetails =
+          status === "Booked" &&
+          (
+            item?.requesterName ||
+            item?.bookingTime ||
+            item?.poojaAddress
+          )
+            ? `
+              <small>Booked</small>
+              ${item?.requesterName
+                ? `<small>${escapeHtml(item.requesterName)}</small>`
+                : ""}
+              ${item?.bookingTime
+                ? `<small>${escapeHtml(item.bookingTime)}</small>`
+                : ""}
+              ${item?.poojaAddress
+                ? `<small class="pooja-calendar-booking-address">${escapeHtml(item.poojaAddress)}</small>`
+                : ""}
+            `
+            : "";
+
         cells.push(`
           <div class="pooja-calendar-day ${escapeHtml(statusClass)}"
-            title="${escapeHtml(item?.reason || item?.time || "Not offered")}">
+            title="${escapeHtml(
+              item?.poojaAddress ||
+              item?.reason ||
+              item?.time ||
+              "Not offered"
+            )}">
             <strong>${day}</strong>
-            ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+            ${bookedDetails || (detail
+              ? `<small>${escapeHtml(detail)}</small>`
+              : "")}
             ${
               adminControls && status === "Blocked"
                 ? `
