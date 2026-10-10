@@ -596,7 +596,8 @@
       margin-top: 8px;
     }
 
-    .home-pooja-block-edit-form {
+    .home-pooja-block-edit-form,
+    .home-pooja-booking-edit-form {
       margin-top: 12px;
       padding: 12px;
       border: 1px solid #e3ded4;
@@ -604,7 +605,8 @@
       background: #fffaf3;
     }
 
-    .home-pooja-block-edit-form[hidden] {
+    .home-pooja-block-edit-form[hidden],
+    .home-pooja-booking-edit-form[hidden] {
       display: none;
     }
 
@@ -4837,6 +4839,31 @@
                       ? `<span>${escapeHtml(item.requesterNote)}</span>`
                       : ""
                   }
+                  <div class="home-pooja-block-actions">
+                    <button class="small-action-button"
+                      type="button" data-action="edit-booking">
+                      Edit Booking
+                    </button>
+                  </div>
+                  <form class="maaladharan-form home-pooja-booking-edit-form"
+                    hidden>
+                    <div class="form-field">
+                      <label>Scheduled Time</label>
+                      <input name="preferredTime" type="text"
+                        value="${escapeHtml(item.preferredTime || "")}" required>
+                    </div>
+                    <div class="form-field">
+                      <label>Pooja Address</label>
+                      <textarea name="poojaAddress"
+                        required>${escapeHtml(item.poojaAddress || "")}</textarea>
+                    </div>
+                    <div class="form-actions full-width">
+                      <button class="small-action-button"
+                        type="submit">Save Booking Changes</button>
+                      <button class="small-action-button secondary-button"
+                        type="button" data-action="cancel-booking-edit">Cancel</button>
+                    </div>
+                  </form>
                 </div>
               `).join("")
             : "<p>No Home Pooja bookings.</p>"
@@ -4943,6 +4970,30 @@
     container.addEventListener(
       "submit",
       async event => {
+        const bookingEditForm = event.target.closest(
+          ".home-pooja-booking-edit-form"
+        );
+
+        if (bookingEditForm) {
+          event.preventDefault();
+          const row = bookingEditForm.closest(
+            "[data-home-pooja-id]"
+          );
+          const values = new FormData(bookingEditForm);
+
+          await submitHomePoojaAdminAction(
+            "PATCH",
+            {
+              id: Number(row.dataset.homePoojaId),
+              action: "edit-booking",
+              preferredTime: values.get("preferredTime"),
+              poojaAddress: values.get("poojaAddress")
+            }
+          );
+
+          return;
+        }
+
         const editForm = event.target.closest(
           ".home-pooja-block-edit-form"
         );
@@ -4975,6 +5026,34 @@
           );
 
         if (!button) {
+          return;
+        }
+
+        if (button.dataset.action === "edit-booking") {
+          const row = button.closest("[data-home-pooja-id]");
+          const editForm = row?.querySelector(
+            ".home-pooja-booking-edit-form"
+          );
+
+          if (editForm) {
+            editForm.hidden = false;
+            editForm.querySelector(
+              'input[name="preferredTime"]'
+            )?.focus();
+          }
+
+          return;
+        }
+
+        if (button.dataset.action === "cancel-booking-edit") {
+          const editForm = button.closest(
+            ".home-pooja-booking-edit-form"
+          );
+
+          if (editForm) {
+            editForm.hidden = true;
+          }
+
           return;
         }
 

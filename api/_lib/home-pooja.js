@@ -386,7 +386,26 @@ export async function handleAdminHomePooja(req, res) {
       });
     }
 
-    if (action === "unblock") {
+    if (action === "edit-booking") {
+      if (getSelect(row, FIELDS.entryType) !== "Booking") {
+        return badRequest(res, "Only Home Pooja bookings can be edited.");
+      }
+
+      const preferredTime = cleanString(req.body?.preferredTime).slice(0, 100);
+      const poojaAddress = cleanString(req.body?.poojaAddress).slice(0, 1000);
+
+      if (!preferredTime || !poojaAddress) {
+        return badRequest(res, "Scheduled time and Pooja address are required.");
+      }
+
+      await patchEntry(id, {
+        [fieldKey(FIELDS.preferredTime)]: preferredTime,
+        [fieldKey(FIELDS.poojaAddress)]: poojaAddress,
+        [fieldKey(FIELDS.adminNotes)]: "Booking time or address edited",
+        [fieldKey(FIELDS.approvedBy)]: auth.normalizedEmail,
+        [fieldKey(FIELDS.approvedOn)]: todayInEasternTime()
+      });
+    } else if (action === "unblock") {
       if (getSelect(row, FIELDS.entryType) !== "Blocked") {
         return badRequest(
           res,
@@ -405,7 +424,7 @@ export async function handleAdminHomePooja(req, res) {
     } else {
       return badRequest(
         res,
-        "Select unblock."
+        "Select edit booking or unblock."
       );
     }
 

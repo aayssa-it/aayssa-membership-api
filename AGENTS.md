@@ -213,6 +213,7 @@ The old Supabase magic-link callback route was removed after switching to passco
 
 - `PATCH /api/admin-members?resource=home-pooja`
   - Board/Admin-only removal of custom and built-in date blocks.
+  - Board/Admin can edit a confirmed booking's scheduled time and Pooja address; the editor and edit date are recorded in the existing approval audit fields.
   - Board/Admin can edit the date and event name for custom or built-in blocked events; built-in edits persist by cancelling the default block and creating the edited block row.
   - Supports unblocking a date directly from the admin calendar, including built-in event and preparation blocks; built-in overrides are persisted as cancelled block rows.
 
@@ -276,6 +277,7 @@ Board/Admin dashboard includes:
 - The dashboard Registered Swamies card heading shows the total number of registered Swamies.
 - Member directory with search, pagination, and sorting.
 - Board/Admin Home Pooja booking review without an approval step.
+- Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
 - Administration Blocks provides Edit controls for changing a blocked event's date and event name.
 - December 4, 2026 is a built-in `Mandalam Closing` block, and blocked special-event dates appear in the calendar even when the day is outside normal Home Pooja availability.
