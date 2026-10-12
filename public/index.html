@@ -4310,6 +4310,11 @@
         </div>
 
         <div class="info-row">
+          <span class="label">Spouse Email</span>
+          <span class="value">${displayValue(member.spouseEmail)}</span>
+        </div>
+
+        <div class="info-row">
           <span class="label">Mobile</span>
           <span class="value">${displayValue(member.mobileNumber)}</span>
         </div>
@@ -4452,6 +4457,12 @@
         <div class="info-row">
           <span class="label">Email</span>
           <span class="value">${displayValue(member.email)}</span>
+        </div>
+
+        <div class="form-field">
+          <label>Spouse Email Address</label>
+          <input name="spouseEmail" type="email" autocomplete="email" value="${escapeHtml(member.spouseEmail || "")}">
+          <div class="small-note">The spouse can use this email to log in to the same member portal account.</div>
         </div>
 
         <div class="form-field">
@@ -4639,6 +4650,9 @@
       spouseLastName:
         data.get("spouseLastName") ??
         currentMember.spouseLastName,
+      spouseEmail:
+        data.get("spouseEmail") ??
+        currentMember.spouseEmail,
       mobileNumber:
         data.get("mobileNumber") ??
         currentMember.mobileNumber,

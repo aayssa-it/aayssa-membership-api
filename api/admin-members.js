@@ -7,6 +7,10 @@ import {
   mapVolunteerRow
 } from "./_lib/aayssa.js";
 
+import {
+  findMemberByEmail
+} from "./_lib/aayssa.js";
+
 export default async function handler(req, res) {
 
   if (req.query?.resource === "home-pooja") {
@@ -138,62 +142,16 @@ export default async function handler(req, res) {
     // 4. Look up authenticated AAYSSA member
     // ==================================================
 
-    const viewerLookupUrl =
-      `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/` +
-      `?user_field_names=false` +
-      `&filter__field_10464593__equal=${encodeURIComponent(
-        normalizedEmail
-      )}`;
+    const viewerRow =
+      await findMemberByEmail(normalizedEmail);
 
-
-    const viewerLookupResponse =
-      await fetch(
-        viewerLookupUrl,
-        {
-          headers: {
-            Authorization:
-              `Token ${BASEROW_TOKEN}`
-          }
-        }
-      );
-
-
-    if (!viewerLookupResponse.ok) {
-
-      console.error(
-        "Directory viewer lookup failed:",
-        viewerLookupResponse.status
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to verify directory access."
-      });
-    }
-
-
-    const viewerLookupData =
-      await viewerLookupResponse.json();
-
-
-    if (
-      !Array.isArray(
-        viewerLookupData.results
-      ) ||
-      viewerLookupData.results.length === 0
-    ) {
+    if (!viewerRow) {
 
       return res.status(403).json({
         success: false,
         message: "Membership not found."
       });
     }
-
-
-    const viewerRow =
-      viewerLookupData.results[0];
-
 
 
     // ==================================================

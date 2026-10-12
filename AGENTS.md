@@ -39,6 +39,7 @@ Do not expose server-side tokens in browser code.
 - `BASEROW_URL`
 - `BASEROW_TOKEN`
 - `BASEROW_TABLE_ID`
+- `BASEROW_SPOUSE_EMAIL_FIELD_ID` (optional; accepts the numeric Baserow field ID or `field_<id>`. When omitted, the API discovers a member-table field named `Spouse Email Address`, `Spouse Email`, `Secondary Email Address`, or `Secondary Email`.)
 - `BASEROW_VOLUNTEERS_TABLE_ID`
 - `BASEROW_MAALADHARAN_TABLE_ID` (defaults to `1210688`)
 - `BASEROW_HOME_POOJA_TABLE_ID` (defaults to `1240702`)
@@ -55,6 +56,8 @@ Do not expose server-side tokens in browser code.
 Members table:
 - Name: `AAYSSA_Members`
 - Table ID: `1142367`
+- Includes an optional `Spouse Email Address` email/text field used as a secondary login identifier for the same household membership.
+- Primary and spouse email addresses must be unique across all member rows and cannot be identical within one row.
 
 Volunteer table:
 - Name: `AAYSSA_Volunteers`
@@ -94,7 +97,7 @@ Volunteer areas:
 
 The public login embed uses passcode login:
 
-1. User enters email in `public/login-embed.html`.
+1. User enters the primary or spouse email in `public/login-embed.html`.
 2. Browser calls `POST /api/login`.
 3. Supabase sends a one-time email passcode.
 4. User enters the passcode.
@@ -113,7 +116,8 @@ The old Supabase magic-link callback route was removed after switching to passco
 
 - The browser must never supply or be trusted for role, family row ID, or Baserow row identity.
 - Authenticated email from Supabase is the source of identity.
-- Backend looks up the member row by normalized email.
+- Backend looks up the same member row by the primary normalized email first, then by the optional spouse email.
+- A spouse login receives access to the same household record and permissions as the primary member; it does not create a separate membership.
 - Board/Admin access is enforced server-side.
 - Member-only APIs must scope reads/writes to the authenticated member family.
 

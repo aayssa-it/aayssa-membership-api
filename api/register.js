@@ -1,7 +1,9 @@
 import {
   buildVolunteerPayload,
   createVolunteerRow,
+  findMemberByEmail,
   getPrimaryName,
+  getSpouseEmailFieldKey,
   getSpouseName
 } from "./_lib/aayssa.js";
 import {
@@ -79,6 +81,7 @@ export default async function handler(req, res) {
       lastName,
       spouseFirstName,
       spouseLastName,
+      spouseEmail,
       email,
       mobileNumber,
       address,
@@ -101,6 +104,11 @@ export default async function handler(req, res) {
     const normalizedEmail = String(email || "")
       .trim()
       .toLowerCase();
+
+    const normalizedSpouseEmail =
+      String(spouseEmail || "")
+        .trim()
+        .toLowerCase();
 
     const normalizedPhone = String(mobileNumber || "")
       .replace(/\D/g, "")
@@ -156,6 +164,28 @@ export default async function handler(req, res) {
       });
     }
 
+    if (
+      normalizedSpouseEmail &&
+      !emailPattern.test(normalizedSpouseEmail)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please enter a valid spouse email address."
+      });
+    }
+
+    if (
+      normalizedSpouseEmail &&
+      normalizedSpouseEmail === normalizedEmail
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "The spouse email must be different from the primary email."
+      });
+    }
+
 
     // =========================================================
     // 6. Load secure Vercel environment variables
@@ -187,38 +217,25 @@ export default async function handler(req, res) {
     // field_10464593
     // =========================================================
 
-    const emailUrl =
-      `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/` +
-      `?user_field_names=false` +
-      `&filter__field_10464593__equal=` +
-      encodeURIComponent(normalizedEmail);
+    const existingPrimaryEmailMember =
+      await findMemberByEmail(normalizedEmail);
 
+    const existingSpouseEmailMember =
+      normalizedSpouseEmail
+        ? await findMemberByEmail(normalizedSpouseEmail)
+        : null;
 
-    const emailResponse =
-      await fetch(emailUrl, {
-        method: "GET",
-        headers
-      });
+    const spouseEmailFieldKey =
+      await getSpouseEmailFieldKey();
 
-
-    if (!emailResponse.ok) {
-
-      const errorText =
-        await emailResponse.text();
-
-      console.error(
-        "Baserow email lookup failed:",
-        errorText
-      );
-
+    if (
+      normalizedSpouseEmail &&
+      !spouseEmailFieldKey
+    ) {
       throw new Error(
-        "Unable to check email duplicates."
+        "The Spouse Email Address field is missing from the member table."
       );
     }
-
-
-    const emailData =
-      await emailResponse.json();
 
 
     // =========================================================
@@ -263,7 +280,10 @@ export default async function handler(req, res) {
 
 
     const emailExists =
-      emailData.count > 0;
+      Boolean(
+        existingPrimaryEmailMember ||
+        existingSpouseEmailMember
+      );
 
     const phoneExists =
       phoneData.count > 0;
@@ -385,6 +405,11 @@ export default async function handler(req, res) {
       // Role = Member
       field_10493689: 7473604
     };
+
+    if (spouseEmailFieldKey) {
+      newMember[spouseEmailFieldKey] =
+        normalizedSpouseEmail;
+    }
 
 
     // =========================================================

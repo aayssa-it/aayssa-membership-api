@@ -1,3 +1,8 @@
+import {
+  getAuthenticatedMember,
+  getSpouseEmail
+} from "./_lib/aayssa.js";
+
 export default async function handler(req, res) {
   const allowedOrigins = [
     "https://atlantaayyappasevasangam.org",
@@ -27,106 +32,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Read HttpOnly access-token cookie
-    const cookies = parseCookies(req.headers.cookie || "");
-    const accessToken = cookies.aayssa_access;
+    const auth =
+      await getAuthenticatedMember(req);
 
-    if (!accessToken) {
-      return res.status(401).json({
+    if (auth.status !== 200) {
+      return res.status(auth.status).json({
         success: false,
-        message: "Not authenticated."
+        message: auth.error
       });
     }
 
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_PUBLISHABLE_KEY =
-      process.env.SUPABASE_PUBLISHABLE_KEY;
-
-    const BASEROW_TOKEN = process.env.BASEROW_TOKEN;
-    const BASEROW_TABLE_ID = process.env.BASEROW_TABLE_ID;
-
-    if (
-      !SUPABASE_URL ||
-      !SUPABASE_PUBLISHABLE_KEY ||
-      !BASEROW_TOKEN ||
-      !BASEROW_TABLE_ID
-    ) {
-      console.error("Missing required environment variables.");
-
-      return res.status(500).json({
-        success: false,
-        message: "Portal service unavailable."
-      });
-    }
-
-    // Verify session with Supabase
-    const userResponse = await fetch(
-      `${SUPABASE_URL}/auth/v1/user`,
-      {
-        headers: {
-          apikey: SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${accessToken}`
-        }
-      }
-    );
-
-    if (!userResponse.ok) {
-      return res.status(401).json({
-        success: false,
-        message: "Session expired."
-      });
-    }
-
-    const user = await userResponse.json();
-
-    if (!user?.email) {
-      return res.status(401).json({
-        success: false,
-        message: "Authenticated email unavailable."
-      });
-    }
-
-    const normalizedEmail =
-      String(user.email).trim().toLowerCase();
-
-    // IMPORTANT:
-    // Look up ONLY the authenticated user's email.
-    const baserowUrl =
-      `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/` +
-      `?user_field_names=false` +
-      `&filter__field_10464593__equal=${encodeURIComponent(normalizedEmail)}`;
-
-    const baserowResponse = await fetch(baserowUrl, {
-      headers: {
-        Authorization: `Token ${BASEROW_TOKEN}`
-      }
-    });
-
-    if (!baserowResponse.ok) {
-      console.error(
-        "Baserow member lookup failed:",
-        baserowResponse.status
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to load membership."
-      });
-    }
-
-    const baserowData = await baserowResponse.json();
-
-    if (
-      !Array.isArray(baserowData.results) ||
-      baserowData.results.length === 0
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: "AAYSSA membership not found."
-      });
-    }
-
-    const row = baserowData.results[0];
+    const row = auth.memberRow;
+    const spouseEmail =
+      await getSpouseEmail(row);
 
     // Translate Baserow Role safely
     const roleId =
@@ -177,6 +95,8 @@ export default async function handler(req, res) {
         email:
           row.field_10281594 || "",
 
+        spouseEmail,
+
         mobileNumber:
           row.field_10281595 || "",
 
@@ -220,23 +140,4 @@ export default async function handler(req, res) {
       message: "Unable to load member profile."
     });
   }
-}
-
-function parseCookies(cookieHeader) {
-  const cookies = {};
-
-  cookieHeader.split(";").forEach(cookie => {
-    const index = cookie.indexOf("=");
-
-    if (index === -1) return;
-
-    const key = cookie.slice(0, index).trim();
-    const value = cookie.slice(index + 1).trim();
-
-    if (key) {
-      cookies[key] = decodeURIComponent(value);
-    }
-  });
-
-  return cookies;
 }

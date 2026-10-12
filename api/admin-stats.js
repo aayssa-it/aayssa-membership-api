@@ -1,5 +1,6 @@
 import {
   VOLUNTEERS_TABLE_ID,
+  findMemberByEmail,
   mapVolunteerRow
 } from "./_lib/aayssa.js";
 import {
@@ -129,62 +130,16 @@ export default async function handler(req, res) {
     // 2. Look up authenticated member in Baserow
     // ==================================================
 
-    const memberLookupUrl =
-      `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/` +
-      `?user_field_names=false` +
-      `&filter__field_10464593__equal=${encodeURIComponent(
-        normalizedEmail
-      )}`;
+    const memberRow =
+      await findMemberByEmail(normalizedEmail);
 
-
-    const memberLookupResponse =
-      await fetch(
-        memberLookupUrl,
-        {
-          headers: {
-            Authorization:
-              `Token ${BASEROW_TOKEN}`
-          }
-        }
-      );
-
-
-    if (!memberLookupResponse.ok) {
-
-      console.error(
-        "Board/Admin lookup failed:",
-        memberLookupResponse.status
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to verify dashboard access."
-      });
-    }
-
-
-    const memberLookupData =
-      await memberLookupResponse.json();
-
-
-    if (
-      !Array.isArray(
-        memberLookupData.results
-      ) ||
-      memberLookupData.results.length === 0
-    ) {
+    if (!memberRow) {
 
       return res.status(403).json({
         success: false,
         message: "Membership not found."
       });
     }
-
-
-    const memberRow =
-      memberLookupData.results[0];
-
 
 
     // ==================================================

@@ -1,7 +1,10 @@
 import {
   cleanString,
   fetchFamilyVolunteerRows,
+  findMemberByEmail,
   getAuthenticatedMember,
+  getSpouseEmail,
+  getSpouseEmailFieldKey,
   mapVolunteerRow,
   updateVolunteerRow,
   updateMemberRow
@@ -51,31 +54,80 @@ export default async function handler(req, res) {
       });
     }
 
+    if (
+      profile.spouseEmail &&
+      !isValidEmail(profile.spouseEmail)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid spouse email address."
+      });
+    }
+
+    if (
+      profile.spouseEmail &&
+      profile.spouseEmail ===
+        cleanString(auth.memberRow.field_10464593).toLowerCase()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "The spouse email must be different from the primary email."
+      });
+    }
+
+    const existingEmailMember =
+      profile.spouseEmail
+        ? await findMemberByEmail(profile.spouseEmail)
+        : null;
+
+    if (
+      existingEmailMember &&
+      existingEmailMember.id !== auth.memberRow.id
+    ) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This spouse email is already linked to another membership."
+      });
+    }
+
+    const spouseEmailFieldKey =
+      await getSpouseEmailFieldKey();
+
+    if (
+      profile.spouseEmail &&
+      !spouseEmailFieldKey
+    ) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "The Spouse Email Address field is missing from the member table."
+      });
+    }
+
+    const memberUpdates = {
+      field_10227506: profile.firstName,
+      field_10473214: profile.lastName,
+      field_10227562: profile.spouseFirstName,
+      field_10473216: profile.spouseLastName,
+      field_10281595: profile.normalizedPhone,
+      field_10281618: profile.address,
+      field_10281686: profile.noOfAdults,
+      field_10281655: profile.noOfKids,
+      field_10281810: profile.emailOptIn,
+      field_10281812: profile.textOptIn
+    };
+
+    if (spouseEmailFieldKey) {
+      memberUpdates[spouseEmailFieldKey] =
+        profile.spouseEmail;
+    }
+
     const updatedRow =
       await updateMemberRow(
         auth.memberRow.id,
-        {
-          field_10227506:
-            profile.firstName,
-          field_10473214:
-            profile.lastName,
-          field_10227562:
-            profile.spouseFirstName,
-          field_10473216:
-            profile.spouseLastName,
-          field_10281595:
-            profile.normalizedPhone,
-          field_10281618:
-            profile.address,
-          field_10281686:
-            profile.noOfAdults,
-          field_10281655:
-            profile.noOfKids,
-          field_10281810:
-            profile.emailOptIn,
-          field_10281812:
-            profile.textOptIn
-        }
+        memberUpdates
       );
 
     await syncVolunteerNames(
@@ -86,7 +138,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       member:
-        mapUpdatedMember(updatedRow)
+        await mapUpdatedMember(updatedRow)
     });
 
   } catch (error) {
@@ -160,6 +212,8 @@ function normalizeProfile(profile) {
       cleanString(profile.spouseFirstName),
     spouseLastName:
       cleanString(profile.spouseLastName),
+    spouseEmail:
+      cleanString(profile.spouseEmail).toLowerCase(),
     mobileNumber,
     normalizedPhone:
       mobileNumber
@@ -200,7 +254,7 @@ function normalizeOptionalNumber(value) {
   return Math.floor(number);
 }
 
-function mapUpdatedMember(row) {
+async function mapUpdatedMember(row) {
   const roleId =
     row.field_10493689?.id ??
     row.field_10493689?.value ??
@@ -236,6 +290,8 @@ function mapUpdatedMember(row) {
     role,
     email:
       row.field_10281594 || "",
+    spouseEmail:
+      await getSpouseEmail(row),
     mobileNumber:
       row.field_10281595 || "",
     address:
@@ -259,4 +315,8 @@ function mapUpdatedMember(row) {
     editProfileLink:
       row.field_10361006 || ""
   };
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }

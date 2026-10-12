@@ -1,3 +1,7 @@
+import {
+  findMemberByEmail
+} from "./_lib/aayssa.js";
+
 export default async function handler(req, res) {
   const allowedOrigins = [
     "https://atlantaayyappasevasangam.org",
@@ -58,36 +62,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // Check if this email exists in Baserow
-    const baserowUrl =
-      `https://api.baserow.io/api/database/rows/table/${BASEROW_TABLE_ID}/` +
-      `?user_field_names=false` +
-      `&filter__field_10464593__equal=${encodeURIComponent(normalizedEmail)}`;
-
-    const baserowResponse = await fetch(baserowUrl, {
-      headers: {
-        Authorization: `Token ${BASEROW_TOKEN}`
-      }
-    });
-
-    if (!baserowResponse.ok) {
-      console.error(
-        "Baserow lookup failed:",
-        baserowResponse.status,
-        await baserowResponse.text()
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Login service is temporarily unavailable."
-      });
-    }
-
-    const baserowData = await baserowResponse.json();
-
     const memberExists =
-      Array.isArray(baserowData.results) &&
-      baserowData.results.length > 0;
+      Boolean(await findMemberByEmail(normalizedEmail));
 
     /*
       Always return a generic success message to the browser.

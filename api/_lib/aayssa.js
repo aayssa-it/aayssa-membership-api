@@ -1,6 +1,11 @@
 export const MEMBERS_TABLE_ID =
   process.env.BASEROW_TABLE_ID;
 
+export const PRIMARY_EMAIL_FIELD =
+  "field_10464593";
+
+let spouseEmailFieldKeyPromise;
+
 export const VOLUNTEERS_TABLE_ID =
   process.env.BASEROW_VOLUNTEERS_TABLE_ID || "1179938";
 
@@ -99,10 +104,63 @@ export async function findMemberByEmail(email) {
     return null;
   }
 
+  const primaryMatch =
+    await findMemberByField(
+      PRIMARY_EMAIL_FIELD,
+      normalizedEmail
+    );
+
+  if (primaryMatch) {
+    return primaryMatch;
+  }
+
+  const spouseEmailFieldKey =
+    await getSpouseEmailFieldKey();
+
+  if (!spouseEmailFieldKey) {
+    return null;
+  }
+
+  return findMemberByField(
+    spouseEmailFieldKey,
+    normalizedEmail
+  );
+}
+
+export async function getSpouseEmailFieldKey() {
+  const configuredField =
+    String(
+      process.env.BASEROW_SPOUSE_EMAIL_FIELD_ID || ""
+    ).trim();
+
+  if (configuredField) {
+    return configuredField.startsWith("field_")
+      ? configuredField
+      : `field_${configuredField}`;
+  }
+
+  if (!spouseEmailFieldKeyPromise) {
+    spouseEmailFieldKeyPromise =
+      discoverSpouseEmailFieldKey();
+  }
+
+  return spouseEmailFieldKeyPromise;
+}
+
+export async function getSpouseEmail(memberRow) {
+  const fieldKey =
+    await getSpouseEmailFieldKey();
+
+  return fieldKey
+    ? cleanString(memberRow?.[fieldKey]).toLowerCase()
+    : "";
+}
+
+async function findMemberByField(fieldKey, normalizedEmail) {
   const lookupUrl =
     `${getBaserowBaseUrl()}/api/database/rows/table/${MEMBERS_TABLE_ID}/` +
     `?user_field_names=false` +
-    `&filter__field_10464593__equal=${encodeURIComponent(normalizedEmail)}`;
+    `&filter__${fieldKey}__equal=${encodeURIComponent(normalizedEmail)}`;
 
   const lookupResponse =
     await fetch(
@@ -131,6 +189,43 @@ export async function findMemberByEmail(email) {
     lookupData.results.length > 0
       ? lookupData.results[0]
       : null;
+}
+
+async function discoverSpouseEmailFieldKey() {
+  assertServerConfig();
+
+  const response = await fetch(
+    `${getBaserowBaseUrl()}/api/database/fields/table/${MEMBERS_TABLE_ID}/`,
+    { headers: getBaserowHeaders() }
+  );
+
+  if (!response.ok) {
+    console.error(
+      "Member field lookup failed:",
+      response.status
+    );
+    throw new Error("Unable to load member fields.");
+  }
+
+  const fields = await response.json();
+  const acceptedNames = new Set([
+    "spouse email",
+    "spouse email address",
+    "secondary email",
+    "secondary email address"
+  ]);
+  const spouseEmailField =
+    Array.isArray(fields)
+      ? fields.find(field =>
+          acceptedNames.has(
+            cleanString(field?.name).toLowerCase()
+          )
+        )
+      : null;
+
+  return spouseEmailField?.id
+    ? `field_${spouseEmailField.id}`
+    : null;
 }
 
 export async function getAuthenticatedMember(req) {
@@ -184,39 +279,20 @@ export async function getAuthenticatedMember(req) {
       .trim()
       .toLowerCase();
 
-  const lookupUrl =
-    `${getBaserowBaseUrl()}/api/database/rows/table/${MEMBERS_TABLE_ID}/` +
-    `?user_field_names=false` +
-    `&filter__field_10464593__equal=${encodeURIComponent(normalizedEmail)}`;
+  let memberRow;
 
-  const lookupResponse =
-    await fetch(
-      lookupUrl,
-      {
-        headers:
-          getBaserowHeaders()
-      }
-    );
-
-  if (!lookupResponse.ok) {
-    console.error(
-      "Authenticated member lookup failed:",
-      lookupResponse.status
-    );
-
+  try {
+    memberRow =
+      await findMemberByEmail(normalizedEmail);
+  } catch (error) {
+    console.error("Authenticated member lookup failed:", error);
     return {
       status: 500,
       error: "Unable to load membership."
     };
   }
 
-  const lookupData =
-    await lookupResponse.json();
-
-  if (
-    !Array.isArray(lookupData.results) ||
-    lookupData.results.length === 0
-  ) {
+  if (!memberRow) {
     return {
       status: 403,
       error: "AAYSSA membership not found."
@@ -227,7 +303,12 @@ export async function getAuthenticatedMember(req) {
     status: 200,
     user,
     normalizedEmail,
-    memberRow: lookupData.results[0]
+    primaryEmail:
+      cleanString(
+        memberRow[PRIMARY_EMAIL_FIELD] ||
+        memberRow.field_10281594
+      ).toLowerCase(),
+    memberRow
   };
 }
 
