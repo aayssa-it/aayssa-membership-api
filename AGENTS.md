@@ -145,7 +145,7 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `POST /api/register?resource=home-pooja`
   - Legacy disabled public booking flow using `request-code` and `submit` actions; no standalone frontend consumes it.
   - Verifies the requester email with Supabase before immediately booking an available date.
-  - Sends a best-effort Resend confirmation containing the booked date, scheduled time, address, status, and optional requester note.
+  - Sends a best-effort Resend confirmation containing the booked date, scheduled time, address, status, optional requester note, and the shared Home Pooja checklist link.
   - Links the family automatically when the verified email matches a member.
   - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
 
@@ -199,7 +199,7 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `POST /api/my-volunteers?resource=home-pooja`
   - Immediately creates a family-linked Home Pooja booking with `Approved` status.
   - Validates the date against server-controlled availability and blocked dates.
-  - Sends the authenticated member a best-effort Resend booking confirmation after the booking is saved.
+  - Sends the authenticated member a best-effort Resend booking confirmation with the shared Home Pooja checklist link after the booking is saved.
 
 - `GET /api/admin-stats`
   - Board/Admin only.

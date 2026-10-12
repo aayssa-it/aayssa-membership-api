@@ -9,6 +9,9 @@ import {
 const TABLE_ID =
   process.env.BASEROW_HOME_POOJA_TABLE_ID || "1240702";
 
+const HOME_POOJA_CHECKLIST_URL =
+  "https://docs.google.com/spreadsheets/d/1uYqd3e_QsF2IiBmSGmuDukcvgyaYNIcPMTkcU1na3Oc/edit?usp=sharing";
+
 const FIELDS = {
   calendarEntry: 11317807,
   entryType: 11317808,
@@ -826,6 +829,8 @@ async function sendHomePoojaConfirmation({ email, request }) {
         "Status: Booked",
         request.requesterNote ? `Note: ${request.requesterNote}` : "",
         "",
+        `Home Pooja checklist: ${HOME_POOJA_CHECKLIST_URL}`,
+        "",
         "Atlanta Ayyappa Seva Sangam"
       ].filter(Boolean).join("\n"),
       html: `
@@ -840,6 +845,7 @@ async function sendHomePoojaConfirmation({ email, request }) {
             <tr><td style="padding:8px"><strong>Status</strong></td><td style="padding:8px">Booked</td></tr>
           </table>
           ${request.requesterNote ? `<p><strong>Note:</strong> ${escapeHomePoojaEmailHtml(request.requesterNote)}</p>` : ""}
+          <p><a href="${HOME_POOJA_CHECKLIST_URL}" style="display:inline-block;padding:11px 18px;background:#8a3f12;color:#fff;text-decoration:none;border-radius:7px;font-weight:bold">View the Home Pooja Checklist</a></p>
           <p>Atlanta Ayyappa Seva Sangam</p>
         </div>
       `
