@@ -24,7 +24,6 @@ Public member login:
   - `public/login-embed.html`
   - `public/register-embed.html`
   - `public/maaladharan-register-embed.html`
-  - Home Pooja embed is held at `drafts/home-pooja-booking-embed.html` during Board preview and is not publicly served.
 - Authentication: Supabase email OTP/passcode.
 - Membership database: Baserow.
 - Donation data: Zeffy API.
@@ -43,7 +42,7 @@ Do not expose server-side tokens in browser code.
 - `BASEROW_VOLUNTEERS_TABLE_ID`
 - `BASEROW_MAALADHARAN_TABLE_ID` (defaults to `1210688`)
 - `BASEROW_HOME_POOJA_TABLE_ID` (defaults to `1240702`)
-- `HOME_POOJA_PUBLIC_ENABLED` (set to exactly `true` to open the public Home Pooja API; unset/false keeps Board preview mode)
+- `HOME_POOJA_PUBLIC_ENABLED` is a legacy public-API gate and should remain unset/false because no standalone Home Pooja page is planned.
 - `ZEFFY_API_KEY`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL` (verified Resend sender; `RESEND_FROM`, `EMAIL_FROM`, and `FROM_EMAIL` are accepted as fallbacks)
@@ -134,13 +133,15 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Does not expose public read, edit, or withdrawal operations.
 
 - `GET /api/register?resource=home-pooja`
-  - Returns the privacy-safe Home Pooja calendar for the public embed.
+  - Legacy disabled endpoint; no standalone Home Pooja frontend is shipped or planned.
+  - Returns the privacy-safe Home Pooja calendar if explicitly enabled.
   - Exposes availability and booked/blocked state, but no requester details.
   - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
 
 - `POST /api/register?resource=home-pooja`
-  - Public Home Pooja booking flow using `request-code` and `submit` actions.
+  - Legacy disabled public booking flow using `request-code` and `submit` actions; no standalone frontend consumes it.
   - Verifies the requester email with Supabase before immediately booking an available date.
+  - Sends a best-effort Resend confirmation containing the booked date, scheduled time, address, status, and optional requester note.
   - Links the family automatically when the verified email matches a member.
   - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
 
@@ -194,6 +195,7 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `POST /api/my-volunteers?resource=home-pooja`
   - Immediately creates a family-linked Home Pooja booking with `Approved` status.
   - Validates the date against server-controlled availability and blocked dates.
+  - Sends the authenticated member a best-effort Resend booking confirmation after the booking is saved.
 
 - `GET /api/admin-stats`
   - Board/Admin only.
@@ -323,20 +325,6 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 - The form reveals a direct link to join the Maaladharan WhatsApp group only after a successful registration.
 - Its WhatsApp link uses `target="_top"` to escape the GoDaddy iframe safely in Safari.
 - When this file changes, copy the updated embed into GoDaddy for the public Maaladharan registration page.
-
-## Public Home Pooja Booking Embed
-
-`drafts/home-pooja-booking-embed.html` is the pre-launch GoDaddy embed. It is intentionally outside `public/` during Board preview.
-
-- Visitors can view a privacy-safe availability calendar and submit a request after verifying their email with a Supabase passcode.
-- Saturdays are offered from 5:00–8:00 PM and Sundays from 9:00 AM–12:00 PM year-round.
-- During the 2026 Mandalam window, October 30 through November 29, Fridays are also offered from 5:00–8:00 PM.
-- Thanksgiving dates November 25 and 26, 2026 are offered from 5:00–8:00 PM.
-- November 14–15, November 21–22, and December 4, 2026 are fixed blocked dates for event preparation, Pushpabhishekam, Sastha Preethi, and Mandalam Closing.
-- Administrator-created blocks and confirmed bookings remove dates from availability.
-- Public bookings are confirmed immediately with `Approved` status on a first-come, first-served basis.
-- The public API is disabled by default during Board preview; launch it by setting `HOME_POOJA_PUBLIC_ENABLED=true`.
-- At launch, move/copy the reviewed embed into the public deployment workflow, set `HOME_POOJA_PUBLIC_ENABLED=true`, and copy it into GoDaddy.
 
 ## Zeffy Integration
 

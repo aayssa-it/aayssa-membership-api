@@ -149,10 +149,15 @@ export async function handlePublicHomePooja(req, res) {
       emailVerified: true
     });
 
+    const confirmationEmailSent =
+      await sendHomePoojaConfirmationSafely({ email, request });
+
     return res.status(201).json({
       success: true,
-      message:
-        "Your Home Pooja has been booked."
+      message: confirmationEmailSent
+        ? "Your Home Pooja has been booked. A confirmation email has been sent."
+        : "Your Home Pooja has been booked.",
+      confirmationEmailSent
     });
   } catch (error) {
     return handleError(res, error);
@@ -227,10 +232,18 @@ export async function handleMemberHomePooja(req, res) {
       emailVerified: true
     });
 
+    const confirmationEmailSent =
+      await sendHomePoojaConfirmationSafely({
+        email: auth.normalizedEmail,
+        request
+      });
+
     return res.status(201).json({
       success: true,
-      message:
-        "Your Home Pooja has been booked."
+      message: confirmationEmailSent
+        ? "Your Home Pooja has been booked. A confirmation email has been sent."
+        : "Your Home Pooja has been booked.",
+      confirmationEmailSent
     });
   } catch (error) {
     return handleError(res, error);
@@ -764,6 +777,108 @@ async function createBooking({
   };
 
   await createRow(values);
+}
+
+async function sendHomePoojaConfirmationSafely({ email, request }) {
+  try {
+    await sendHomePoojaConfirmation({ email, request });
+    return true;
+  } catch (error) {
+    console.error("Home Pooja confirmation email error:", error);
+    return false;
+  }
+}
+
+async function sendHomePoojaConfirmation({ email, request }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from =
+    process.env.RESEND_FROM_EMAIL ||
+    process.env.RESEND_FROM ||
+    process.env.EMAIL_FROM ||
+    process.env.FROM_EMAIL;
+
+  if (!apiKey || !from) {
+    throw new Error("Resend confirmation email is not configured.");
+  }
+
+  const date = formatHomePoojaEmailDate(request.poojaDate);
+  const time = getTimeForDate(request.poojaDate) || "To be confirmed";
+  const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: `AAYSSA Home Pooja Booking Confirmation — ${date}`,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+      text: [
+        `Namaskaram ${request.requesterName},`,
+        "",
+        "Your AAYSSA Home Pooja booking is confirmed.",
+        `Date: ${date}`,
+        `Time: ${time}`,
+        `Address: ${request.poojaAddress}`,
+        "Status: Booked",
+        request.requesterNote ? `Note: ${request.requesterNote}` : "",
+        "",
+        "Atlanta Ayyappa Seva Sangam"
+      ].filter(Boolean).join("\n"),
+      html: `
+        <div style="font-family:Arial,sans-serif;color:#2c211a;line-height:1.6;max-width:620px;margin:auto">
+          <h2 style="color:#8a3f12">Home Pooja Booking Confirmed</h2>
+          <p>Namaskaram ${escapeHomePoojaEmailHtml(request.requesterName)},</p>
+          <p>Your AAYSSA Home Pooja booking is confirmed.</p>
+          <table style="border-collapse:collapse;width:100%;margin:20px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Date</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(date)}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Time</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(time)}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Address</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(request.poojaAddress)}</td></tr>
+            <tr><td style="padding:8px"><strong>Status</strong></td><td style="padding:8px">Booked</td></tr>
+          </table>
+          ${request.requesterNote ? `<p><strong>Note:</strong> ${escapeHomePoojaEmailHtml(request.requesterNote)}</p>` : ""}
+          <p>Atlanta Ayyappa Seva Sangam</p>
+        </div>
+      `
+    })
+  });
+
+  if (!response.ok) {
+    console.error(
+      "Resend Home Pooja confirmation failed:",
+      response.status,
+      await response.text()
+    );
+    throw new Error("Unable to send Home Pooja confirmation email.");
+  }
+}
+
+function formatHomePoojaEmailDate(value) {
+  const [year, month, day] = String(value || "").split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return value || "Not provided";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC"
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+function escapeHomePoojaEmailHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 async function createBlock(date, reason) {
