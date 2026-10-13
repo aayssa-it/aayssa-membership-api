@@ -47,6 +47,10 @@ const THANKSGIVING_DATES = new Set([
 
 const MANDALAM_START = "2026-10-30";
 const MANDALAM_END = "2026-11-29";
+const AVAILABILITY_OVERRIDE_NOTE =
+  "Home Pooja availability override";
+const AVAILABILITY_REMOVED_NOTE =
+  "Home Pooja availability removed";
 
 export async function handlePublicHomePooja(req, res) {
   if (process.env.HOME_POOJA_PUBLIC_ENABLED !== "true") {
@@ -144,6 +148,8 @@ export async function handlePublicHomePooja(req, res) {
     await assertDateCanBeRequested(
       request.poojaDate
     );
+    request.preferredTime =
+      await getEffectiveTimeForDate(request.poojaDate);
 
     await createBooking({
       request,
@@ -227,6 +233,8 @@ export async function handleMemberHomePooja(req, res) {
     await assertDateCanBeRequested(
       request.poojaDate
     );
+    request.preferredTime =
+      await getEffectiveTimeForDate(request.poojaDate);
 
     await createBooking({
       request,
@@ -254,7 +262,7 @@ export async function handleMemberHomePooja(req, res) {
 }
 
 export async function handleAdminHomePooja(req, res) {
-  if (!["GET", "POST", "PATCH"].includes(req.method)) {
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(req.method)) {
     return methodNotAllowed(res);
   }
 
@@ -294,6 +302,20 @@ export async function handleAdminHomePooja(req, res) {
     }
 
     if (req.method === "POST") {
+      if (cleanString(req.body?.action) === "add-availability") {
+        await saveAvailabilityOverride({
+          originalDate: "",
+          date: cleanString(req.body?.poojaDate),
+          time: cleanString(req.body?.preferredTime),
+          adminEmail: auth.normalizedEmail
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: "The Home Pooja date is available for booking."
+        });
+      }
+
       const date =
         cleanString(req.body?.poojaDate);
 
@@ -326,6 +348,32 @@ export async function handleAdminHomePooja(req, res) {
     const notes =
       cleanString(req.body?.adminNotes)
         .slice(0, 1000);
+
+    if (action === "edit-availability") {
+      await saveAvailabilityOverride({
+        originalDate: cleanString(req.body?.originalDate),
+        date: cleanString(req.body?.poojaDate),
+        time: cleanString(req.body?.preferredTime),
+        adminEmail: auth.normalizedEmail
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "The Home Pooja availability was updated."
+      });
+    }
+
+    if (action === "remove-availability") {
+      await removeAvailability(
+        cleanString(req.body?.poojaDate),
+        auth.normalizedEmail
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "The date is no longer available for booking."
+      });
+    }
 
     if (action === "unblock-date") {
       const date =
@@ -496,10 +544,6 @@ function validateBooking(request) {
     return "Select a future Pooja date.";
   }
 
-  if (!getTimeForDate(request.poojaDate)) {
-    return "Home Pooja is not available on the selected date.";
-  }
-
   return "";
 }
 
@@ -535,6 +579,15 @@ function getTimeForDate(value) {
   return "";
 }
 
+async function getEffectiveTimeForDate(date) {
+  const rows = await fetchEntriesForDate(date);
+  const override = rows
+    .map(mapEntry)
+    .find(isActiveAvailabilityOverride);
+
+  return override?.preferredTime || getTimeForDate(date);
+}
+
 async function assertDateCanBeRequested(date) {
   const unavailable =
     await getUnavailableReason(date);
@@ -552,10 +605,6 @@ async function getUnavailableReason(
   date,
   excludedId = null
 ) {
-  if (!getTimeForDate(date)) {
-    return "Home Pooja is not available on this date.";
-  }
-
   const entries =
     await fetchEntriesForDate(date);
 
@@ -565,6 +614,19 @@ async function getUnavailableReason(
         Number(row.id) !== Number(excludedId)
       )
       .map(mapEntry);
+
+  const availabilityOverride =
+    mappedEntries.find(isActiveAvailabilityOverride);
+
+  const availabilityRemoved =
+    mappedEntries.some(isAvailabilityRemoved);
+
+  if (
+    availabilityRemoved ||
+    (!getTimeForDate(date) && !availabilityOverride)
+  ) {
+    return "Home Pooja is not available on this date.";
+  }
 
   const conflict =
     mappedEntries
@@ -626,10 +688,26 @@ async function buildPublicCalendar(
 
   const state = new Map();
   const defaultBlockOverrides = new Set();
+  const availabilityOverrides = new Map();
+  const removedAvailability = new Set();
 
   for (const row of rows) {
     const entry =
       mapEntry(row);
+
+    if (isActiveAvailabilityOverride(entry)) {
+      availabilityOverrides.set(
+        entry.poojaDate,
+        entry.preferredTime
+      );
+      defaultBlockOverrides.add(entry.poojaDate);
+      continue;
+    }
+
+    if (isAvailabilityRemoved(entry)) {
+      removedAvailability.add(entry.poojaDate);
+      continue;
+    }
 
     if (
       entry.entryType === "Blocked" &&
@@ -682,6 +760,7 @@ async function buildPublicCalendar(
     date = addDays(date, 1)
   ) {
     const time =
+      availabilityOverrides.get(date) ||
       getTimeForDate(date);
 
     const defaultReason =
@@ -691,6 +770,18 @@ async function buildPublicCalendar(
 
     const current =
       state.get(date);
+
+    if (removedAvailability.has(date)) {
+      if (includeBookingDetails) {
+        dates.push({
+          date,
+          time: "",
+          status: "Unavailable",
+          reason: "Removed by administrator"
+        });
+      }
+      continue;
+    }
 
     const isBlocked =
       Boolean(defaultReason) ||
@@ -763,6 +854,7 @@ async function createBooking({
     [fieldKey(FIELDS.poojaAddress)]:
       request.poojaAddress,
     [fieldKey(FIELDS.preferredTime)]:
+      request.preferredTime ||
       getTimeForDate(request.poojaDate),
     [fieldKey(FIELDS.requestStatus)]:
       await selectOptionId(
@@ -805,7 +897,9 @@ async function sendHomePoojaConfirmation({ email, request }) {
   }
 
   const date = formatHomePoojaEmailDate(request.poojaDate);
-  const time = getTimeForDate(request.poojaDate) || "To be confirmed";
+  const time = request.preferredTime ||
+    getTimeForDate(request.poojaDate) ||
+    "To be confirmed";
   const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -1038,6 +1132,168 @@ async function editBlockedDate({
   );
 
   await createBlock(date, reason);
+}
+
+function isActiveAvailabilityOverride(entry) {
+  return (
+    entry.entryType === "Blocked" &&
+    entry.status === "Cancelled" &&
+    entry.adminNotes === AVAILABILITY_OVERRIDE_NOTE
+  );
+}
+
+function isAvailabilityRemoved(entry) {
+  return (
+    entry.entryType === "Blocked" &&
+    entry.status === "Blocked" &&
+    entry.adminNotes === AVAILABILITY_REMOVED_NOTE
+  );
+}
+
+async function saveAvailabilityOverride({
+  originalDate,
+  date,
+  time,
+  adminEmail
+}) {
+  if (!isDateString(date) || !time) {
+    const error = new Error(
+      "A valid date and scheduled time are required."
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  if (date < todayInEasternTime()) {
+    const error = new Error(
+      "Availability cannot be added in the past."
+    );
+    error.status = 400;
+    throw error;
+  }
+
+  const destinationRows =
+    await fetchEntriesForDate(date);
+  const destinationEntries =
+    destinationRows.map(mapEntry);
+  const conflictingEntry =
+    destinationEntries.find(entry =>
+      (entry.entryType === "Booking" &&
+        ["Approved", "Submitted"].includes(entry.status)) ||
+      (entry.entryType === "Blocked" &&
+        entry.status === "Blocked" &&
+        !isAvailabilityRemoved(entry))
+    );
+
+  if (conflictingEntry) {
+    const error = new Error(
+      conflictingEntry.entryType === "Booking"
+        ? "This date is already booked."
+        : conflictingEntry.blockReason || "This date is blocked."
+    );
+    error.status = 409;
+    throw error;
+  }
+
+  if (
+    originalDate &&
+    originalDate !== date
+  ) {
+    await removeAvailability(
+      originalDate,
+      adminEmail
+    );
+  }
+
+  const existingRow =
+    destinationRows.find(row => {
+      const entry = mapEntry(row);
+      return (
+        isActiveAvailabilityOverride(entry) ||
+        isAvailabilityRemoved(entry)
+      );
+    });
+
+  const values = {
+    [fieldKey(FIELDS.calendarEntry)]:
+      "Available - " + date,
+    [fieldKey(FIELDS.entryType)]:
+      await selectOptionId(FIELDS.entryType, "Blocked"),
+    [fieldKey(FIELDS.poojaDate)]: date,
+    [fieldKey(FIELDS.preferredTime)]: time.slice(0, 100),
+    [fieldKey(FIELDS.requestStatus)]:
+      await selectOptionId(FIELDS.requestStatus, "Cancelled"),
+    [fieldKey(FIELDS.blockReason)]: "",
+    [fieldKey(FIELDS.adminNotes)]: AVAILABILITY_OVERRIDE_NOTE,
+    [fieldKey(FIELDS.approvedBy)]: adminEmail,
+    [fieldKey(FIELDS.approvedOn)]: todayInEasternTime()
+  };
+
+  if (existingRow) {
+    await patchEntry(existingRow.id, values);
+  } else {
+    await createRow(values);
+  }
+}
+
+async function removeAvailability(date, adminEmail) {
+  if (!isDateString(date)) {
+    const error = new Error("Select a valid available date.");
+    error.status = 400;
+    throw error;
+  }
+
+  const rows = await fetchEntriesForDate(date);
+  const booking = rows
+    .map(mapEntry)
+    .find(entry =>
+      entry.entryType === "Booking" &&
+      ["Approved", "Submitted"].includes(entry.status)
+    );
+
+  if (booking) {
+    const error = new Error(
+      "A booked date cannot be removed from availability."
+    );
+    error.status = 409;
+    throw error;
+  }
+
+  const overrideRow = rows.find(row =>
+    isActiveAvailabilityOverride(mapEntry(row))
+  );
+
+  if (overrideRow && !getTimeForDate(date)) {
+    await deleteEntry(overrideRow.id);
+    return;
+  }
+
+  const removedRow = rows.find(row =>
+    isAvailabilityRemoved(mapEntry(row))
+  );
+  const values = {
+    [fieldKey(FIELDS.calendarEntry)]:
+      "Unavailable - " + date,
+    [fieldKey(FIELDS.entryType)]:
+      await selectOptionId(FIELDS.entryType, "Blocked"),
+    [fieldKey(FIELDS.poojaDate)]: date,
+    [fieldKey(FIELDS.preferredTime)]: "",
+    [fieldKey(FIELDS.requestStatus)]:
+      await selectOptionId(FIELDS.requestStatus, "Blocked"),
+    [fieldKey(FIELDS.blockReason)]: "Home Pooja unavailable",
+    [fieldKey(FIELDS.adminNotes)]: AVAILABILITY_REMOVED_NOTE,
+    [fieldKey(FIELDS.approvedBy)]: adminEmail,
+    [fieldKey(FIELDS.approvedOn)]: todayInEasternTime()
+  };
+
+  if (overrideRow || removedRow) {
+    await patchEntry(
+      (overrideRow || removedRow).id,
+      values
+    );
+  } else {
+    await createRow(values);
+  }
 }
 
 async function unblockDate(
@@ -1305,6 +1561,22 @@ async function patchEntry(id, values) {
 
     throw new Error(
       "Unable to update the calendar entry."
+    );
+  }
+}
+
+async function deleteEntry(id) {
+  const response = await fetch(
+    rowUrl(id),
+    {
+      method: "DELETE",
+      headers: getBaserowHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Unable to remove the availability override."
     );
   }
 }

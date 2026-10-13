@@ -576,6 +576,12 @@
       color: #6f6962;
     }
 
+    .pooja-calendar-day.unavailable {
+      border-color: #e1b9b9;
+      background: #faeaea;
+      color: #8f3030;
+    }
+
     .pooja-calendar-unblock {
       margin-top: 4px;
       padding: 3px 5px;
@@ -597,7 +603,8 @@
     }
 
     .home-pooja-block-edit-form,
-    .home-pooja-booking-edit-form {
+    .home-pooja-booking-edit-form,
+    .home-pooja-availability-edit-form {
       margin-top: 12px;
       padding: 12px;
       border: 1px solid #e3ded4;
@@ -606,8 +613,62 @@
     }
 
     .home-pooja-block-edit-form[hidden],
-    .home-pooja-booking-edit-form[hidden] {
+    .home-pooja-booking-edit-form[hidden],
+    .home-pooja-availability-edit-form[hidden] {
       display: none;
+    }
+
+    .home-pooja-invitation-builder {
+      margin-top: 14px;
+      padding: 16px;
+      border: 1px solid #d9bd83;
+      border-radius: 12px;
+      background: #fffaf0;
+    }
+
+    .home-pooja-invitation-builder[hidden] {
+      display: none;
+    }
+
+    .home-pooja-invitation-preview {
+      margin-top: 16px;
+      padding: 28px 20px;
+      border: 2px solid #b97716;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #fffdf8, #fff1d2);
+      color: #4e2c0b;
+      text-align: center;
+    }
+
+    .home-pooja-invitation-preview h3 {
+      margin: 6px 0 12px;
+      color: #8a3f12;
+      font-family: Georgia, serif;
+      font-size: 27px;
+    }
+
+    .home-pooja-invitation-preview strong,
+    .home-pooja-invitation-preview span {
+      display: block;
+    }
+
+    .home-pooja-invitation-preview .invitation-host {
+      margin: 12px 0;
+      color: #713d0d;
+      font-size: 20px;
+    }
+
+    .home-pooja-invitation-preview .invitation-address {
+      margin-top: 12px;
+      white-space: pre-line;
+    }
+
+    .home-pooja-invitation-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
     }
 
     .maaladharan-registration {
@@ -2320,6 +2381,20 @@
                         ? `<span>${escapeHtml(request.adminNotes)}</span>`
                         : ""
                     }
+                    ${["Approved", "Submitted"].includes(request.status)
+                      ? `
+                        <div class="home-pooja-block-actions">
+                          <button class="small-action-button"
+                            type="button"
+                            data-action="open-invitation"
+                            data-invitation-id="${escapeHtml(request.id)}">
+                            Create Invitation
+                          </button>
+                        </div>
+                        ${renderHomePoojaInvitationBuilder(request)}
+                      `
+                      : ""
+                    }
                   </div>
                 `).join("")
               : "<span>No Home Pooja bookings yet.</span>"
@@ -2430,6 +2505,8 @@
         const statusClass = status.toLowerCase();
         const detail = status === "Booked"
           ? "Booked"
+          : status === "Unavailable"
+            ? "Unavailable"
           : status === "Blocked"
             ? adminControls
               ? formatHomePoojaBlockedLabel(item?.reason)
@@ -2515,6 +2592,10 @@
           <span style="--calendar-color:#ece9e5">
             ${adminControls ? "Blocked" : "AAYSSA Event"}
           </span>
+          ${adminControls
+            ? '<span style="--calendar-color:#faeaea">Unavailable</span>'
+            : ""
+          }
         </div>
         <div class="pooja-calendar-months">
           <div class="pooja-calendar-navigation">
@@ -2660,6 +2741,8 @@
 
 
   function setupHomePoojaForm() {
+    setupHomePoojaInvitations();
+
     const form =
       document.getElementById(
         "homePoojaMemberForm"
@@ -2751,6 +2834,142 @@
         }
       }
     );
+  }
+
+
+  function renderHomePoojaInvitationBuilder(request) {
+    const period = getHomePoojaInvitationPeriod(request);
+
+    return `
+      <div class="home-pooja-invitation-builder"
+        data-invitation-builder="${escapeHtml(request.id)}" hidden>
+        <div class="maaladharan-form">
+          <div class="form-field">
+            <label>Host Name</label>
+            <input type="text" data-invitation-name
+              value="${escapeHtml(request.requesterName || getCurrentFullName(currentMember))}">
+          </div>
+          <div class="form-field full-width">
+            <label>Address</label>
+            <textarea data-invitation-address>${escapeHtml(request.poojaAddress || "")}</textarea>
+          </div>
+        </div>
+        <div class="home-pooja-invitation-preview" data-invitation-preview>
+          <span>Swamiye Saranam Ayyappa</span>
+          <h3>AAYSSA Home Pooja Invitation</h3>
+          <span>You and your family are cordially invited to join us for a</span>
+          <strong>${escapeHtml(period)} Home Pooja</strong>
+          <strong class="invitation-host" data-invitation-host>${escapeHtml(request.requesterName || getCurrentFullName(currentMember))}</strong>
+          <span>${escapeHtml(formatPortalDate(request.poojaDate))}</span>
+          <span>${escapeHtml(request.preferredTime || "")}</span>
+          <span class="invitation-address" data-invitation-location>${escapeHtml(request.poojaAddress || "")}</span>
+          <span>We look forward to your presence and blessings.</span>
+        </div>
+        <div class="home-pooja-invitation-actions">
+          <button class="small-action-button" type="button"
+            data-action="copy-invitation">Copy Invitation</button>
+          <button class="small-action-button" type="button"
+            data-action="print-invitation">Print</button>
+          <button class="small-action-button secondary-button" type="button"
+            data-action="close-invitation">Close</button>
+        </div>
+        <div class="inline-message" data-invitation-message
+          role="status" aria-live="polite"></div>
+      </div>
+    `;
+  }
+
+
+  function getHomePoojaInvitationPeriod(request) {
+    return String(request.preferredTime || "")
+      .includes("9:00 AM")
+        ? "Morning"
+        : "Evening";
+  }
+
+
+  function setupHomePoojaInvitations() {
+    const section = document.getElementById("homePoojaSection");
+
+    if (!section || section.dataset.invitationReady === "true") {
+      return;
+    }
+
+    section.dataset.invitationReady = "true";
+
+    section.addEventListener("input", event => {
+      const builder = event.target.closest("[data-invitation-builder]");
+
+      if (!builder) {
+        return;
+      }
+
+      const name = builder.querySelector("[data-invitation-name]").value.trim();
+      const address = builder.querySelector("[data-invitation-address]").value.trim();
+      builder.querySelector("[data-invitation-host]").textContent =
+        name || "Your Host";
+      builder.querySelector("[data-invitation-location]").textContent =
+        address || "Address to be provided";
+    });
+
+    section.addEventListener("click", async event => {
+      const button = event.target.closest("[data-action]");
+
+      if (!button) {
+        return;
+      }
+
+      const action = button.dataset.action;
+      const booking = button.closest(".maaladharan-registration");
+      const builder = action === "open-invitation"
+        ? booking?.querySelector("[data-invitation-builder]")
+        : button.closest("[data-invitation-builder]");
+
+      if (!builder) {
+        return;
+      }
+
+      if (action === "open-invitation") {
+        builder.hidden = false;
+        builder.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        return;
+      }
+
+      if (action === "close-invitation") {
+        builder.hidden = true;
+        return;
+      }
+
+      const preview = builder.querySelector("[data-invitation-preview]");
+      const message = builder.querySelector("[data-invitation-message]");
+
+      if (action === "copy-invitation") {
+        try {
+          await navigator.clipboard.writeText(
+            preview.innerText.replace(/\n{3,}/g, "\n\n").trim()
+          );
+          message.className = "inline-message success";
+          message.textContent = "Invitation copied.";
+        } catch (error) {
+          message.className = "inline-message error";
+          message.textContent = "Unable to copy. Please select and copy the invitation text.";
+        }
+        return;
+      }
+
+      if (action === "print-invitation") {
+        const printWindow = window.open("", "_blank");
+
+        if (!printWindow) {
+          message.className = "inline-message error";
+          message.textContent = "Please allow pop-ups to print the invitation.";
+          return;
+        }
+
+        printWindow.document.write(`<!doctype html><html><head><title>Home Pooja Invitation</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#4e2c0b}.invitation{max-width:650px;margin:auto;padding:48px 32px;border:3px solid #b97716;border-radius:18px;background:#fff8e8;text-align:center;line-height:1.7}.invitation h3{font-family:Georgia,serif;font-size:34px;color:#8a3f12;margin:8px 0 18px}.invitation strong,.invitation span{display:block}.invitation-host{font-size:24px;color:#713d0d;margin:14px 0}.invitation-address{margin:14px 0;white-space:pre-line}@media print{body{padding:0}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    });
   }
 
 
@@ -4792,6 +5011,11 @@
           item.status === "Blocked"
         );
 
+      const availableDates =
+        calendarDates.filter(item =>
+          item.status === "Available"
+        );
+
       container.innerHTML = `
         <h4>Booking Calendar</h4>
         <p class="section-description">
@@ -4801,6 +5025,69 @@
           calendarDates,
           { adminControls: true }
         )}
+
+        <h4>Availability Management</h4>
+        <p class="section-description">
+          Add any date and time, or edit and remove dates currently
+          available for Home Pooja booking.
+        </p>
+        <form id="homePoojaAvailabilityForm"
+          class="maaladharan-form">
+          <div class="form-field">
+            <label for="adminAvailableDate">Available Date</label>
+            <input id="adminAvailableDate" name="poojaDate"
+              type="date" required>
+          </div>
+          <div class="form-field">
+            <label for="adminAvailableTime">Scheduled Time</label>
+            <input id="adminAvailableTime" name="preferredTime"
+              type="text" placeholder="Example: 5:00 PM–8:00 PM" required>
+          </div>
+          <div class="form-actions full-width">
+            <button class="small-action-button" type="submit">
+              Add Available Date
+            </button>
+          </div>
+        </form>
+
+        <div class="registered-swamies-panel">
+          <span class="label">Available Home Pooja Dates</span>
+          ${availableDates.length
+            ? availableDates.map(item => `
+                <div class="maaladharan-registration"
+                  data-availability-date="${escapeHtml(item.date)}">
+                  <strong>${escapeHtml(formatPortalDate(item.date))}</strong>
+                  <span>${escapeHtml(item.time || "")}</span>
+                  <div class="home-pooja-block-actions">
+                    <button class="small-action-button" type="button"
+                      data-action="edit-availability">Edit</button>
+                    <button class="small-action-button secondary-button"
+                      type="button" data-action="remove-availability"
+                      data-pooja-date="${escapeHtml(item.date)}">Remove</button>
+                  </div>
+                  <form class="maaladharan-form home-pooja-availability-edit-form"
+                    data-original-date="${escapeHtml(item.date)}" hidden>
+                    <div class="form-field">
+                      <label>Available Date</label>
+                      <input name="poojaDate" type="date"
+                        value="${escapeHtml(item.date)}" required>
+                    </div>
+                    <div class="form-field">
+                      <label>Scheduled Time</label>
+                      <input name="preferredTime" type="text"
+                        value="${escapeHtml(item.time || "")}" required>
+                    </div>
+                    <div class="form-actions full-width">
+                      <button class="small-action-button" type="submit">Save Availability</button>
+                      <button class="small-action-button secondary-button"
+                        type="button" data-action="cancel-availability-edit">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              `).join("")
+            : "<p>No available dates in the displayed calendar range.</p>"
+          }
+        </div>
 
         <p class="section-description">
           Block any date for a special AAYSSA event, including days
@@ -4954,7 +5241,12 @@
         "homePoojaBlockForm"
       );
 
-    if (!container || !blockForm) {
+    const availabilityForm =
+      document.getElementById(
+        "homePoojaAvailabilityForm"
+      );
+
+    if (!container || !blockForm || !availabilityForm) {
       return;
     }
 
@@ -4981,9 +5273,46 @@
       }
     );
 
+    availabilityForm.addEventListener(
+      "submit",
+      async event => {
+        event.preventDefault();
+        const values = new FormData(availabilityForm);
+
+        await submitHomePoojaAdminAction(
+          "POST",
+          {
+            action: "add-availability",
+            poojaDate: values.get("poojaDate"),
+            preferredTime: values.get("preferredTime")
+          }
+        );
+      }
+    );
+
     container.addEventListener(
       "submit",
       async event => {
+        const availabilityEditForm = event.target.closest(
+          ".home-pooja-availability-edit-form"
+        );
+
+        if (availabilityEditForm) {
+          event.preventDefault();
+          const values = new FormData(availabilityEditForm);
+
+          await submitHomePoojaAdminAction(
+            "PATCH",
+            {
+              action: "edit-availability",
+              originalDate: availabilityEditForm.dataset.originalDate,
+              poojaDate: values.get("poojaDate"),
+              preferredTime: values.get("preferredTime")
+            }
+          );
+          return;
+        }
+
         const bookingEditForm = event.target.closest(
           ".home-pooja-booking-edit-form"
         );
@@ -5040,6 +5369,46 @@
           );
 
         if (!button) {
+          return;
+        }
+
+        if (button.dataset.action === "edit-availability") {
+          const row = button.closest("[data-availability-date]");
+          const editForm = row?.querySelector(
+            ".home-pooja-availability-edit-form"
+          );
+
+          if (editForm) {
+            editForm.hidden = false;
+            editForm.querySelector('input[name="poojaDate"]')?.focus();
+          }
+          return;
+        }
+
+        if (button.dataset.action === "cancel-availability-edit") {
+          const editForm = button.closest(
+            ".home-pooja-availability-edit-form"
+          );
+          if (editForm) {
+            editForm.hidden = true;
+          }
+          return;
+        }
+
+        if (button.dataset.action === "remove-availability") {
+          if (!window.confirm(
+            "Remove this date from Home Pooja availability?"
+          )) {
+            return;
+          }
+
+          await submitHomePoojaAdminAction(
+            "PATCH",
+            {
+              action: "remove-availability",
+              poojaDate: button.dataset.poojaDate
+            }
+          );
           return;
         }
 

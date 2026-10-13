@@ -257,6 +257,7 @@ Member portal (`public/index.html`) includes:
   - Presents availability in a responsive month-at-a-time calendar with Previous/Next navigation and privacy-safe Available, Booked, and Blocked states.
   - Allows an authenticated family to book an available date immediately on a first-come, first-served basis.
   - Marks the date booked as soon as the booking is saved; no administrator approval is required.
+  - Confirmed bookings include a web invitation builder. The host can edit the displayed host name and address while the booked date, morning/evening schedule, invitation wording, and AAYSSA styling remain fixed; invitations can be copied or printed.
 - During preview, appears only for authenticated Board/Admin users and the member API enforces the same role restriction.
   - Preview loading is isolated from the core member profile so an optional booking or dashboard failure cannot prevent portal access.
   - Calendar-only dates are formatted as local calendar dates to avoid UTC date shifts in the browser.
@@ -285,6 +286,7 @@ Board/Admin dashboard includes:
 - Board/Admin Home Pooja booking review without an approval step.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
+- Board/Admin availability management can add any Home Pooja date and scheduled time, edit an available date/time, or remove availability. Overrides use existing booking-table fields and do not require another Baserow column.
 - Administration Blocks provides Edit controls for changing a blocked event's date and event name.
 - December 4, 2026 is a built-in `Mandalam Closing` block, and blocked special-event dates appear in the calendar even when the day is outside normal Home Pooja availability.
 - The Administration Blocks list is derived from calendar state so it includes every active custom and built-in block, with concise event labels.
