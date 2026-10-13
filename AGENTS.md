@@ -286,7 +286,7 @@ Board/Admin dashboard includes:
 - Board/Admin Home Pooja booking review without an approval step.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
-- Board/Admin availability management can add any Home Pooja date and scheduled time, edit an available date/time, or remove availability. Overrides use existing booking-table fields and do not require another Baserow column.
+- Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column.
 - Administration Blocks provides Edit controls for changing a blocked event's date and event name.
 - December 4, 2026 is a built-in `Mandalam Closing` block, and blocked special-event dates appear in the calendar even when the day is outside normal Home Pooja availability.
 - The Administration Blocks list is derived from calendar state so it includes every active custom and built-in block, with concise event labels.

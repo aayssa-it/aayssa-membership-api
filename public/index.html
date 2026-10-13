@@ -595,6 +595,26 @@
       cursor: pointer;
     }
 
+    .pooja-calendar-admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      margin-top: 5px;
+    }
+
+    .pooja-calendar-admin-actions button {
+      padding: 3px 5px;
+      border: 1px solid #8b4f16;
+      border-radius: 5px;
+      background: #fff;
+      color: #713d0d;
+      font: inherit;
+      font-size: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     .home-pooja-block-actions {
       display: flex;
       flex-wrap: wrap;
@@ -2549,6 +2569,24 @@
             ${bookedDetails || (detail
               ? `<small>${escapeHtml(detail)}</small>`
               : "")}
+            ${
+              adminControls && status === "Available"
+                ? `
+                  <div class="pooja-calendar-admin-actions">
+                    <button type="button"
+                      data-action="edit-calendar-availability"
+                      data-pooja-date="${escapeHtml(date)}"
+                      data-pooja-time="${escapeHtml(item?.time || "")}">Edit</button>
+                    <button type="button"
+                      data-action="remove-availability"
+                      data-pooja-date="${escapeHtml(date)}">Remove</button>
+                    <button type="button"
+                      data-action="block-available-date"
+                      data-pooja-date="${escapeHtml(date)}">Block</button>
+                  </div>
+                `
+                : ""
+            }
             ${
               adminControls && status === "Blocked"
                 ? `
@@ -5011,11 +5049,6 @@
           item.status === "Blocked"
         );
 
-      const availableDates =
-        calendarDates.filter(item =>
-          item.status === "Available"
-        );
-
       container.innerHTML = `
         <h4>Booking Calendar</h4>
         <p class="section-description">
@@ -5026,10 +5059,32 @@
           { adminControls: true }
         )}
 
+        <form id="homePoojaCalendarAvailabilityEditor"
+          class="maaladharan-form home-pooja-availability-edit-form"
+          data-original-date="" hidden>
+          <div class="form-field">
+            <label>Edit Available Date</label>
+            <input name="poojaDate" type="date" required>
+          </div>
+          <div class="form-field">
+            <label>Scheduled Time</label>
+            <input name="preferredTime" type="text" required>
+          </div>
+          <div class="form-actions full-width">
+            <button class="small-action-button" type="submit">
+              Save Availability
+            </button>
+            <button class="small-action-button secondary-button"
+              type="button" data-action="cancel-availability-edit">
+              Cancel
+            </button>
+          </div>
+        </form>
+
         <h4>Availability Management</h4>
         <p class="section-description">
-          Add any date and time, or edit and remove dates currently
-          available for Home Pooja booking.
+          Add any date and time. Use Edit, Remove, or Block directly
+          on an available calendar date.
         </p>
         <form id="homePoojaAvailabilityForm"
           class="maaladharan-form">
@@ -5049,45 +5104,6 @@
             </button>
           </div>
         </form>
-
-        <div class="registered-swamies-panel">
-          <span class="label">Available Home Pooja Dates</span>
-          ${availableDates.length
-            ? availableDates.map(item => `
-                <div class="maaladharan-registration"
-                  data-availability-date="${escapeHtml(item.date)}">
-                  <strong>${escapeHtml(formatPortalDate(item.date))}</strong>
-                  <span>${escapeHtml(item.time || "")}</span>
-                  <div class="home-pooja-block-actions">
-                    <button class="small-action-button" type="button"
-                      data-action="edit-availability">Edit</button>
-                    <button class="small-action-button secondary-button"
-                      type="button" data-action="remove-availability"
-                      data-pooja-date="${escapeHtml(item.date)}">Remove</button>
-                  </div>
-                  <form class="maaladharan-form home-pooja-availability-edit-form"
-                    data-original-date="${escapeHtml(item.date)}" hidden>
-                    <div class="form-field">
-                      <label>Available Date</label>
-                      <input name="poojaDate" type="date"
-                        value="${escapeHtml(item.date)}" required>
-                    </div>
-                    <div class="form-field">
-                      <label>Scheduled Time</label>
-                      <input name="preferredTime" type="text"
-                        value="${escapeHtml(item.time || "")}" required>
-                    </div>
-                    <div class="form-actions full-width">
-                      <button class="small-action-button" type="submit">Save Availability</button>
-                      <button class="small-action-button secondary-button"
-                        type="button" data-action="cancel-availability-edit">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              `).join("")
-            : "<p>No available dates in the displayed calendar range.</p>"
-          }
-        </div>
 
         <p class="section-description">
           Block any date for a special AAYSSA event, including days
@@ -5372,16 +5388,19 @@
           return;
         }
 
-        if (button.dataset.action === "edit-availability") {
-          const row = button.closest("[data-availability-date]");
-          const editForm = row?.querySelector(
-            ".home-pooja-availability-edit-form"
+        if (button.dataset.action === "edit-calendar-availability") {
+          const editForm = document.getElementById(
+            "homePoojaCalendarAvailabilityEditor"
           );
+          const date = button.dataset.poojaDate || "";
 
-          if (editForm) {
-            editForm.hidden = false;
-            editForm.querySelector('input[name="poojaDate"]')?.focus();
-          }
+          editForm.dataset.originalDate = date;
+          editForm.elements.poojaDate.value = date;
+          editForm.elements.preferredTime.value =
+            button.dataset.poojaTime || "";
+          editForm.hidden = false;
+          editForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          editForm.elements.preferredTime.focus();
           return;
         }
 
@@ -5409,6 +5428,14 @@
               poojaDate: button.dataset.poojaDate
             }
           );
+          return;
+        }
+
+        if (button.dataset.action === "block-available-date") {
+          const date = button.dataset.poojaDate || "";
+          blockForm.elements.poojaDate.value = date;
+          blockForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          blockForm.elements.blockReason.focus();
           return;
         }
 
