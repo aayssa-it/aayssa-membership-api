@@ -622,6 +622,31 @@
       margin-top: 8px;
     }
 
+    .home-pooja-admin-dropdown {
+      margin-top: 18px;
+      border: 1px solid #ded7cd;
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .home-pooja-admin-dropdown summary {
+      padding: 14px 16px;
+      background: #fff8ec;
+      color: #713d0d;
+      font-weight: 700;
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .home-pooja-admin-dropdown[open] summary {
+      border-bottom: 1px solid #ead8bb;
+    }
+
+    .home-pooja-admin-dropdown-content {
+      padding: 4px 16px 12px;
+    }
+
     .home-pooja-block-edit-form,
     .home-pooja-booking-edit-form,
     .home-pooja-availability-edit-form {
@@ -5130,10 +5155,14 @@
           </div>
         </form>
 
-        <h4>Home Pooja Bookings</h4>
-        ${
-          requests.length
-            ? requests.map(item => `
+        <details class="home-pooja-admin-dropdown">
+          <summary>
+            Home Pooja Bookings (${requests.length})
+          </summary>
+          <div class="home-pooja-admin-dropdown-content">
+          ${
+            requests.length
+              ? requests.map(item => `
                 <div class="maaladharan-registration"
                   data-home-pooja-id="${item.id}">
                   <strong>
@@ -5182,14 +5211,20 @@
                     </div>
                   </form>
                 </div>
-              `).join("")
-            : "<p>No Home Pooja bookings.</p>"
-        }
+                `).join("")
+              : "<p>No Home Pooja bookings.</p>"
+          }
+          </div>
+        </details>
 
-        <h4>Administration Blocks</h4>
-        ${
-          blocks.length
-            ? blocks.map(item => `
+        <details class="home-pooja-admin-dropdown">
+          <summary>
+            Administration Blocks (${blocks.length})
+          </summary>
+          <div class="home-pooja-admin-dropdown-content">
+          ${
+            blocks.length
+              ? blocks.map(item => `
                 <div class="maaladharan-registration"
                   data-block-date="${escapeHtml(item.date)}">
                   <strong>
@@ -5227,9 +5262,11 @@
                     </div>
                   </form>
                 </div>
-              `).join("")
-            : "<p>No blocked dates.</p>"
-        }
+                `).join("")
+              : "<p>No blocked dates.</p>"
+          }
+          </div>
+        </details>
         <div id="homePoojaAdminMessage"
           class="inline-message" role="status"></div>
       `;

@@ -284,6 +284,7 @@ Board/Admin dashboard includes:
 - The dashboard Registered Swamies card heading shows the total number of registered Swamies.
 - Member directory with search, pagination, and sorting.
 - Board/Admin Home Pooja booking review without an approval step.
+- Home Pooja Bookings and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
 - Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column.
