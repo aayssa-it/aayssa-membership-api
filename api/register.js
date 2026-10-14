@@ -12,6 +12,9 @@ import {
 import {
   handlePublicHomePooja
 } from "./_lib/home-pooja.js";
+import {
+  handlePublicFeedback
+} from "./_lib/feedback.js";
 
 const AAYSSA_FAMILY_WHATSAPP_URL =
   "https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t";
@@ -57,6 +60,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "home-pooja") {
     return handlePublicHomePooja(req, res);
+  }
+
+  if (req.query?.resource === "feedback") {
+    return handlePublicFeedback(req, res);
   }
 
   if (req.method !== "POST") {

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AAYSSA Feedback, Comments and Suggestions</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Arial, sans-serif;
+      color: #2c211a;
+      background: #f7f4ef;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .banner {
+      padding: 30px 20px;
+      background: linear-gradient(135deg, #4e1f08, #a45712);
+      color: #fff;
+      text-align: center;
+    }
+    .banner img { width: 100px; max-height: 100px; object-fit: contain; }
+    .banner h1 { margin: 12px 0 5px; font-family: Georgia, serif; }
+    .banner p { margin: 0; color: #ffe7bf; }
+    main { width: min(760px, calc(100% - 28px)); margin: 24px auto 50px; }
+    form, .success-card {
+      padding: 24px;
+      border: 1px solid #e4d8c8;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(67, 39, 13, .08);
+    }
+    .intro { margin: 0 0 22px; line-height: 1.55; color: #5d554d; }
+    .field { margin-bottom: 18px; }
+    label, legend { display: block; margin-bottom: 7px; font-weight: 700; }
+    .required { color: #a32626; }
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #cfc5ba;
+      border-radius: 8px;
+      background: #fff;
+      color: inherit;
+      font: inherit;
+    }
+    textarea { min-height: 170px; resize: vertical; }
+    fieldset { margin: 0 0 20px; padding: 0; border: 0; }
+    .choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 9px 0;
+      font-weight: 400;
+    }
+    .choice input { width: auto; margin-top: 3px; }
+    .contact-panel {
+      padding: 16px;
+      border: 1px solid #ead8bb;
+      border-radius: 10px;
+      background: #fffaf1;
+    }
+    .contact-panel[hidden] { display: none; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .full { grid-column: 1 / -1; }
+    .note { margin-top: 6px; color: #71675d; font-size: 13px; line-height: 1.4; }
+    .honeypot { position: absolute; left: -10000px; }
+    button {
+      width: 100%;
+      padding: 13px 18px;
+      border: 0;
+      border-radius: 9px;
+      background: #8a3f12;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .65; cursor: wait; }
+    .message { min-height: 22px; margin-top: 14px; text-align: center; }
+    .message.error { color: #a32626; }
+    .success-card { text-align: center; }
+    .success-card h2 { color: #26783c; }
+    [hidden] { display: none !important; }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      form { padding: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="banner">
+    <img src="https://img1.wsimg.com/isteam/ip/e97baa43-87af-41b2-a556-36e5f7165670/blob-1444af7.png" alt="AAYSSA">
+    <h1>Feedback, Comments &amp; Suggestions</h1>
+    <p>Atlanta Ayyappa Seva Sangam</p>
+  </header>
+  <main>
+    <form id="feedbackForm">
+      <p class="intro">
+        Your feedback helps AAYSSA serve our community better. You may
+        submit anonymously or optionally share contact information.
+      </p>
+      <div class="field">
+        <label for="category">Category <span class="required">*</span></label>
+        <select id="category" name="category" required>
+          <option value="">Select a category</option>
+          <option>Pooja</option>
+          <option>Annadhanam</option>
+          <option>Bhajan</option>
+          <option>Media and Communications</option>
+          <option>Events and Programs</option>
+          <option>Volunteering and Seva</option>
+          <option>Membership and Member Portal</option>
+          <option>Facilities and Logistics</option>
+          <option>Finance and Donations</option>
+          <option>General Suggestion</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="feedback">Feedback, Comment or Suggestion <span class="required">*</span></label>
+        <textarea id="feedback" name="feedback" maxlength="5000" required></textarea>
+      </div>
+      <fieldset>
+        <legend>How would you like to submit?</legend>
+        <label class="choice">
+          <input type="radio" name="identityChoice" value="anonymous" checked>
+          <span>Submit anonymously</span>
+        </label>
+        <label class="choice">
+          <input type="radio" name="identityChoice" value="contact">
+          <span>Optionally provide my name and contact information</span>
+        </label>
+      </fieldset>
+      <section id="contactPanel" class="contact-panel" hidden>
+        <div class="grid">
+          <div class="field full">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="150">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="phoneNumber">Phone Number</label>
+            <input id="phoneNumber" name="phoneNumber" type="tel" autocomplete="tel">
+          </div>
+          <div class="field full" id="contactPermission" hidden>
+            <label class="choice">
+              <input id="mayContact" name="mayContact" type="checkbox">
+              <span>Yes, AAYSSA may contact me if clarification or additional details are needed.</span>
+            </label>
+          </div>
+        </div>
+        <div class="note">All contact fields are optional. Contact permission appears after an email or phone number is entered.</div>
+      </section>
+      <div class="honeypot" aria-hidden="true">
+        <label for="website">Website</label>
+        <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+      </div>
+      <button id="submitButton" type="submit">Submit Feedback</button>
+      <div id="message" class="message" role="status" aria-live="polite"></div>
+    </form>
+    <section id="successCard" class="success-card" hidden>
+      <h2>Thank You</h2>
+      <p>Your feedback has been submitted to AAYSSA.</p>
+      <button id="anotherButton" type="button">Submit Another Response</button>
+    </section>
+  </main>
+  <script>
+    const form = document.getElementById("feedbackForm");
+    const contactPanel = document.getElementById("contactPanel");
+    const contactPermission = document.getElementById("contactPermission");
+    const email = document.getElementById("email");
+    const phone = document.getElementById("phoneNumber");
+    const message = document.getElementById("message");
+    const submitButton = document.getElementById("submitButton");
+    const successCard = document.getElementById("successCard");
+
+    document.querySelectorAll('[name="identityChoice"]').forEach(input => {
+      input.addEventListener("change", updateIdentityChoice);
+    });
+    email.addEventListener("input", updateContactPermission);
+    phone.addEventListener("input", updateContactPermission);
+
+    function updateIdentityChoice() {
+      const anonymous = form.elements.identityChoice.value === "anonymous";
+      contactPanel.hidden = anonymous;
+      if (anonymous) {
+        form.elements.mayContact.checked = false;
+      }
+      updateContactPermission();
+    }
+
+    function updateContactPermission() {
+      const hasContact = email.value.trim() || phone.value.trim();
+      const anonymous = form.elements.identityChoice.value === "anonymous";
+      contactPermission.hidden = anonymous || !hasContact;
+      if (contactPermission.hidden) {
+        form.elements.mayContact.checked = false;
+      }
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const values = new FormData(form);
+      const anonymous = values.get("identityChoice") === "anonymous";
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting…";
+      message.textContent = "";
+      message.className = "message";
+
+      try {
+        const response = await fetch("/api/register?resource=feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: values.get("category"),
+            feedback: values.get("feedback"),
+            anonymous,
+            name: anonymous ? "" : values.get("name"),
+            email: anonymous ? "" : values.get("email"),
+            phoneNumber: anonymous ? "" : values.get("phoneNumber"),
+            mayContact: anonymous ? false : values.get("mayContact") === "on",
+            website: values.get("website")
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Unable to submit feedback.");
+        }
+        form.hidden = true;
+        successCard.hidden = false;
+      } catch (error) {
+        message.className = "message error";
+        message.textContent = error.message;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit Feedback";
+      }
+    });
+
+    document.getElementById("anotherButton").addEventListener("click", () => {
+      form.reset();
+      form.hidden = false;
+      successCard.hidden = true;
+      updateIdentityChoice();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>

@@ -15,6 +15,9 @@ Member portal:
 Public member login:
 `https://portal.atlantaayyappasevasangam.org/login-embed.html`
 
+Public feedback form:
+`https://portal.atlantaayyappasevasangam.org/feedback.html`
+
 ## Tech Stack
 
 - Hosting/API: Vercel serverless functions.
@@ -43,11 +46,13 @@ Do not expose server-side tokens in browser code.
 - `BASEROW_VOLUNTEERS_TABLE_ID`
 - `BASEROW_MAALADHARAN_TABLE_ID` (defaults to `1210688`)
 - `BASEROW_HOME_POOJA_TABLE_ID` (defaults to `1240702`)
+- `BASEROW_FEEDBACK_TABLE_ID` (defaults to `1262224`)
 - `HOME_POOJA_PUBLIC_ENABLED` is a legacy public-API gate and should remain unset/false because no standalone Home Pooja page is planned.
 - `ZEFFY_API_KEY`
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL` (verified Resend sender; `RESEND_FROM`, `EMAIL_FROM`, and `FROM_EMAIL` are accepted as fallbacks)
 - `RESEND_REPLY_TO_EMAIL` (optional)
+- `CRON_SECRET` (required to authorize the weekly feedback digest invocation; use a random value of at least 16 characters)
 
 `.env.local` is ignored by Git. Never commit secrets.
 
@@ -80,6 +85,13 @@ Home Pooja booking table:
 - New bookings are stored immediately with `Approved` status on a first-come, first-served basis; `Cancelled` and `Blocked` remain available for calendar management.
 - Legacy `Submitted` Home Pooja rows are treated as booked so dates claimed before the workflow change remain reserved.
 - Approved bookings are exposed as booked dates on the privacy-safe public calendar.
+
+Feedback table:
+- Name: `AAYSSA_Feedbacks`
+- Table ID: `1262224`
+- Fields are resolved by name: `Feedback`, `Category`, `Anonymous`, `Name`, `Email`, `Phone Number`, `May Contact`, `Status`, `Included in Digest`, and `Digest Sent On`.
+- Public anonymous submissions discard all contact details server-side.
+- New submissions default to `New` and remain excluded from a digest until Resend confirms delivery.
 
 Volunteer records are per person:
 - Primary
@@ -128,6 +140,9 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Creates per-person volunteer rows.
   - Sends a best-effort Resend confirmation to the registered email after the member row is created.
   - The confirmation includes the AAYSSA Family WhatsApp group link in its HTML and plain-text versions.
+- `POST /api/register?resource=feedback`
+  - Public feedback submission endpoint used by `public/feedback.html`.
+  - Validates category and feedback, enforces anonymous submissions server-side, and stores optional contact permission.
 - `POST /api/register?resource=maaladharan`
   - Public, create-only Maaladharan registration flow.
   - The `request-code` action sends a Supabase email passcode.
@@ -204,6 +219,12 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `GET /api/admin-stats`
   - Board/Admin only.
   - Returns membership counts, volunteer stats, registration trend, Zeffy donation total, and monthly donation trend.
+
+- `GET /api/admin-stats?resource=feedback-digest`
+  - Secured by Vercel `CRON_SECRET` authorization.
+  - Sends all feedback not previously included in a digest to `aayssa.official@gmail.com` through Resend.
+  - Marks rows as included only after the email is accepted by Resend.
+  - Scheduled in `vercel.json` for Fridays at 13:00 UTC (8 AM Eastern Standard Time / 9 AM Eastern Daylight Time).
 
 - `GET /api/admin-members`
   - Board/Admin only.
@@ -319,6 +340,10 @@ It uses:
 `https://portal.atlantaayyappasevasangam.org/api`
 
 When this file changes, copy the updated embed into GoDaddy for the public login page.
+
+## Public Feedback Form
+
+`public/feedback.html` is a standalone hosted form. It supports anonymous submission by default, optional name/email/phone, conditional permission to contact, required category selection, spam honeypot protection, and a confirmation screen.
 
 ## Public Maaladharan Registration Embed
 

@@ -6,6 +6,9 @@ import {
 import {
   fetchMaaladharanDashboardSummary
 } from "./_lib/maaladharan.js";
+import {
+  handleFeedbackDigest
+} from "./_lib/feedback.js";
 
 const ZEFFY_API_BASE_URL =
   "https://api.zeffy.com/api/v1";
@@ -14,6 +17,10 @@ const DEFAULT_DONATION_CURRENCY =
   "USD";
 
 export default async function handler(req, res) {
+
+  if (req.query?.resource === "feedback-digest") {
+    return handleFeedbackDigest(req, res);
+  }
 
   if (req.method !== "GET") {
     return res.status(405).json({
