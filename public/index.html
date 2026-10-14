@@ -232,6 +232,19 @@
       font-weight: 700;
     }
 
+    .portal-mobile-feedback {
+      display: none;
+      margin: -6px 0 16px;
+      padding: 10px 12px;
+      border: 1px solid #d9bd83;
+      border-radius: 9px;
+      background: #fff8ec;
+      color: #713d0d;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+    }
+
     .portal-panel[hidden] {
       display: none;
     }
@@ -1619,6 +1632,10 @@
       }
 
       .portal-mobile-selector {
+        display: block;
+      }
+
+      .portal-mobile-feedback {
         display: block;
       }
 
@@ -5093,18 +5110,6 @@
     );
 
     const showSection = section => {
-      if (section === "feedback") {
-        window.open(
-          "/feedback.html",
-          "_blank",
-          "noopener,noreferrer"
-        );
-        selector.value =
-          panels.find(panel => !panel.hidden)
-            ?.dataset.portalPanel || "overview";
-        return;
-      }
-
       const target = availableSections.has(section)
         ? section
         : "overview";
@@ -7092,8 +7097,12 @@
           ${hasDashboardAccess(member.role)
             ? '<option value="administration">Administration</option>'
             : ""}
-          <option value="feedback">Feedback &amp; Suggestions ↗</option>
         </select>
+
+        <a class="portal-mobile-feedback" href="/feedback.html"
+          target="_blank" rel="noopener noreferrer">
+          Feedback &amp; Suggestions ↗
+        </a>
 
         <div class="portal-shell">
           <aside class="portal-sidebar" aria-label="Member portal navigation">
