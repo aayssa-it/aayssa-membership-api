@@ -14,7 +14,7 @@ const CATEGORIES = [
   "Pooja",
   "Annadhanam",
   "Bhajan",
-  "Media and Communications",
+  "Media",
   "Events and Programs",
   "Volunteering and Seva",
   "Membership and Member Portal",
