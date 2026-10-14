@@ -12,6 +12,9 @@ const TABLE_ID =
 const HOME_POOJA_CHECKLIST_URL =
   "https://docs.google.com/spreadsheets/d/1uYqd3e_QsF2IiBmSGmuDukcvgyaYNIcPMTkcU1na3Oc/edit?usp=sharing";
 
+const MEMBER_BOOKING_OPENS_AT =
+  Date.parse("2026-10-14T22:00:00Z");
+
 const FIELDS = {
   calendarEntry: 11317807,
   entryType: 11317808,
@@ -190,10 +193,14 @@ export async function handleMemberHomePooja(req, res) {
       });
     }
 
-    if (!hasBoardAccess(auth.memberRow)) {
+    if (
+      Date.now() < MEMBER_BOOKING_OPENS_AT &&
+      !hasBoardAccess(auth.memberRow)
+    ) {
       return res.status(403).json({
         success: false,
-        message: "Board access required during preview."
+        message:
+          "Home Pooja booking opens October 14, 2026 at 6:00 PM Eastern."
       });
     }
 

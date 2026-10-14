@@ -1958,6 +1958,28 @@
   }
 
 
+  function isHomePoojaMemberOpen() {
+    return Date.now() >= HOME_POOJA_MEMBER_OPENS_AT;
+  }
+
+
+  function canAccessHomePooja(role) {
+    return isHomePoojaMemberOpen() || hasDashboardAccess(role);
+  }
+
+
+  function scheduleHomePoojaLaunchRefresh() {
+    const delay = HOME_POOJA_MEMBER_OPENS_AT - Date.now();
+
+    if (delay > 0 && delay <= 2147483647) {
+      window.setTimeout(
+        () => window.location.reload(),
+        delay + 1000
+      );
+    }
+  }
+
+
   function renderRoleBadge(role) {
 
     if (role === "Admin") {
@@ -1998,6 +2020,8 @@
   let currentMaaladharan = null;
   let currentHomePooja = null;
   let homePoojaCalendarMonth = "";
+  const HOME_POOJA_MEMBER_OPENS_AT =
+    Date.parse("2026-10-14T22:00:00Z");
 
 
   function formatCurrency(
@@ -2498,10 +2522,12 @@
         class="section-card full-width"
       >
         <div class="section-heading-row">
-          <h2>Home Pooja Booking — Board Preview</h2>
-          <span class="status-badge">
-            Not Public Yet
-          </span>
+          <h2>${isHomePoojaMemberOpen()
+            ? "Home Pooja Booking"
+            : "Home Pooja Booking — Board Preview"}</h2>
+          ${isHomePoojaMemberOpen()
+            ? ""
+            : '<span class="status-badge">Not Public Yet</span>'}
         </div>
 
         <p class="section-description">
@@ -2892,7 +2918,9 @@
 
       return `
         <section class="section-card">
-          <h2>Home Pooja Booking — Board Preview</h2>
+          <h2>${isHomePoojaMemberOpen()
+            ? "Home Pooja Booking"
+            : "Home Pooja Booking — Board Preview"}</h2>
           <p class="section-description">
             The preview could not be loaded. The rest of your
             membership portal remains available.
@@ -7001,7 +7029,7 @@
           loadMyVolunteers(),
           loadMyDonations(),
           loadMaaladharanRegistrations(),
-          hasDashboardAccess(member.role)
+          canAccessHomePooja(member.role)
             ? loadHomePoojaBookings()
             : Promise.resolve(null)
         ]);
@@ -7077,7 +7105,7 @@
           aria-label="Portal section">
           <option value="overview">Overview</option>
           <option value="maaladharan">Maaladharan</option>
-          ${hasDashboardAccess(member.role)
+          ${canAccessHomePooja(member.role)
             ? '<option value="home-pooja">Home Pooja</option>'
             : ""}
           <option value="donations">Donations</option>
@@ -7099,7 +7127,7 @@
               data-portal-target="overview">Overview</button>
             <button class="portal-nav-button" type="button"
               data-portal-target="maaladharan">Maaladharan</button>
-            ${hasDashboardAccess(member.role)
+            ${canAccessHomePooja(member.role)
               ? '<button class="portal-nav-button" type="button" data-portal-target="home-pooja">Home Pooja</button>'
               : ""}
             <button class="portal-nav-button" type="button"
@@ -7134,7 +7162,7 @@
               </div>
             </section>
 
-            ${hasDashboardAccess(member.role)
+            ${canAccessHomePooja(member.role)
               ? `
                 <section class="portal-panel" data-portal-panel="home-pooja" hidden>
                   <div class="grid">
@@ -7190,7 +7218,8 @@
       setupProfileEditing();
       setupMaaladharanForm();
       setupPortalNavigation();
-      if (hasDashboardAccess(member.role)) {
+      scheduleHomePoojaLaunchRefresh();
+      if (canAccessHomePooja(member.role)) {
         try {
           setupHomePoojaForm();
           setupHomePoojaCalendar();

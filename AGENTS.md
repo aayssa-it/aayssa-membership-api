@@ -277,6 +277,8 @@ Member portal (`public/index.html`) includes:
   - Booked dates show the requester's name, scheduled time, and address; the standalone public calendar does not receive these private fields.
   - Labels blocked dates as `AAYSSA Event` in the member-facing calendar; administrative views continue to use `Blocked` terminology.
   - Presents availability in a responsive month-at-a-time calendar with Previous/Next navigation and privacy-safe Available, Booked, and Blocked states.
+  - Opens to all authenticated members automatically on October 14, 2026 at 6:00 PM Eastern (`2026-10-14T22:00:00Z`); Board/Admin retain preview access before launch, and the API enforces the same timestamp.
+  - At launch the `Board Preview` and `Not Public Yet` labels are removed automatically.
   - Allows an authenticated family to book an available date immediately on a first-come, first-served basis.
   - Marks the date booked as soon as the booking is saved; no administrator approval is required.
   - Confirmed bookings include a web invitation builder. The host can edit the displayed host name and address while the booked date, morning/evening schedule, invitation wording, and AAYSSA styling remain fixed; invitations can be copied or printed.
