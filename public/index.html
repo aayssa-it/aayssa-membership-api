@@ -672,12 +672,6 @@
       color: #6f6962;
     }
 
-    .pooja-calendar-day.unavailable {
-      border-color: #e1b9b9;
-      background: #faeaea;
-      color: #8f3030;
-    }
-
     .pooja-calendar-unblock {
       margin-top: 4px;
       padding: 3px 5px;
@@ -2662,8 +2656,6 @@
         const statusClass = status.toLowerCase();
         const detail = status === "Booked"
           ? "Booked"
-          : status === "Unavailable"
-            ? "Unavailable"
           : status === "Blocked"
             ? adminControls
               ? formatHomePoojaBlockedLabel(item?.reason)
@@ -2767,10 +2759,6 @@
           <span style="--calendar-color:#ece9e5">
             ${adminControls ? "Blocked" : "AAYSSA Event"}
           </span>
-          ${adminControls
-            ? '<span style="--calendar-color:#faeaea">Unavailable</span>'
-            : ""
-          }
         </div>
         <div class="pooja-calendar-months">
           <div class="pooja-calendar-navigation">

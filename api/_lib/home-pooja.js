@@ -47,6 +47,7 @@ const THANKSGIVING_DATES = new Set([
 
 const MANDALAM_START = "2026-10-30";
 const MANDALAM_END = "2026-11-29";
+const DEFAULT_AVAILABILITY_END = "2026-12-12";
 const AVAILABILITY_OVERRIDE_NOTE =
   "Home Pooja availability override";
 const AVAILABILITY_REMOVED_NOTE =
@@ -552,6 +553,10 @@ function getTimeForDate(value) {
     return "";
   }
 
+  if (value > DEFAULT_AVAILABILITY_END) {
+    return "";
+  }
+
   if (THANKSGIVING_DATES.has(value)) {
     return "5:00 PM–8:00 PM";
   }
@@ -772,14 +777,6 @@ async function buildPublicCalendar(
       state.get(date);
 
     if (removedAvailability.has(date)) {
-      if (includeBookingDetails) {
-        dates.push({
-          date,
-          time: "",
-          status: "Unavailable",
-          reason: "Removed by administrator"
-        });
-      }
       continue;
     }
 
