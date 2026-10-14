@@ -251,6 +251,7 @@ Member portal (`public/index.html`) includes:
 - A desktop header matching the public AAYSSA website, with its hosted transparent logo, complete navigation labels, and responsive mobile menu.
   - Member, Events, and Sevas are direct links without dropdown indicators and currently point to the public home page because standalone destination routes are unavailable.
 - Top member header with welcome text, role badge, and logout button.
+- A responsive sidebar shows one major section at a time: Overview, Maaladharan, Home Pooja where available, Donations, Seva & Volunteering, and Board/Admin Administration. Mobile uses a compact selector, and Feedback & Suggestions opens the standalone form.
 - After authentication, shows a “Stay connected” link to the AAYSSA Family WhatsApp group; the public login/sign-up embed does not show WhatsApp links.
 - An unauthenticated portal visit links directly to the deployed portal login form; do not use the removed public `/member-login` route.
 - Family details card with edit controls.

@@ -164,6 +164,85 @@
       margin-bottom: 0;
     }
 
+    .portal-shell {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .portal-sidebar {
+      position: sticky;
+      top: 18px;
+      padding: 12px;
+      border: 1px solid #e2dbd1;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, .045);
+    }
+
+    .portal-sidebar-title {
+      padding: 8px 10px 11px;
+      color: #777;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+    }
+
+    .portal-nav-button,
+    .portal-nav-link {
+      display: block;
+      width: 100%;
+      margin: 2px 0;
+      padding: 11px 12px;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #4d4034;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .portal-nav-button:hover,
+    .portal-nav-link:hover {
+      background: #fff5e3;
+      color: #7b420d;
+    }
+
+    .portal-nav-button.active {
+      background: #8a3f12;
+      color: #fff;
+    }
+
+    .portal-mobile-selector {
+      display: none;
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 11px 12px;
+      border: 1px solid #b97716;
+      border-radius: 9px;
+      background: #fffaf2;
+      color: #5b3510;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .portal-panel[hidden] {
+      display: none;
+    }
+
+    .portal-panel-title {
+      margin: 0 0 16px;
+      color: #6f3a0b;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 27px;
+    }
+
 
     /* =====================================================
        MEMBER CARDS
@@ -176,6 +255,10 @@
     }
 
     .grid > .section-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .portal-panel > .grid > .section-card:only-child {
       grid-column: 1 / -1;
     }
 
@@ -1525,6 +1608,18 @@
 
       .page {
         padding: 28px 14px 40px;
+      }
+
+      .portal-shell {
+        display: block;
+      }
+
+      .portal-sidebar {
+        display: none;
+      }
+
+      .portal-mobile-selector {
+        display: block;
       }
 
       .grid,
@@ -4979,6 +5074,78 @@
   }
 
 
+  function setupPortalNavigation() {
+    const buttons = Array.from(
+      document.querySelectorAll("[data-portal-target]")
+    );
+    const panels = Array.from(
+      document.querySelectorAll("[data-portal-panel]")
+    );
+    const selector =
+      document.getElementById("portalSectionSelect");
+
+    if (!buttons.length || !panels.length || !selector) {
+      return;
+    }
+
+    const availableSections = new Set(
+      panels.map(panel => panel.dataset.portalPanel)
+    );
+
+    const showSection = section => {
+      if (section === "feedback") {
+        window.open(
+          "/feedback.html",
+          "_blank",
+          "noopener,noreferrer"
+        );
+        selector.value =
+          panels.find(panel => !panel.hidden)
+            ?.dataset.portalPanel || "overview";
+        return;
+      }
+
+      const target = availableSections.has(section)
+        ? section
+        : "overview";
+
+      panels.forEach(panel => {
+        panel.hidden =
+          panel.dataset.portalPanel !== target;
+      });
+      buttons.forEach(button => {
+        const active =
+          button.dataset.portalTarget === target;
+        button.classList.toggle("active", active);
+        button.setAttribute(
+          "aria-current",
+          active ? "page" : "false"
+        );
+      });
+      selector.value = target;
+      window.history.replaceState(
+        null,
+        "",
+        `#${target}`
+      );
+    };
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        showSection(button.dataset.portalTarget);
+      });
+    });
+
+    selector.addEventListener("change", () => {
+      showSection(selector.value);
+    });
+
+    showSection(
+      window.location.hash.slice(1) || "overview"
+    );
+  }
+
+
   function refreshWelcomeName() {
 
     const welcomeName =
@@ -6912,95 +7079,103 @@
 
         </div>
 
-        <div class="maaladharan-whatsapp-invite">
-          Stay connected with the AAYSSA family on WhatsApp.
-          <a
-            href="https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Join the AAYSSA Family WhatsApp Group</a>.
-        </div>
+        <select id="portalSectionSelect"
+          class="portal-mobile-selector"
+          aria-label="Portal section">
+          <option value="overview">Overview</option>
+          <option value="maaladharan">Maaladharan</option>
+          ${hasDashboardAccess(member.role)
+            ? '<option value="home-pooja">Home Pooja</option>'
+            : ""}
+          <option value="donations">Donations</option>
+          <option value="seva">Seva &amp; Volunteering</option>
+          ${hasDashboardAccess(member.role)
+            ? '<option value="administration">Administration</option>'
+            : ""}
+          <option value="feedback">Feedback &amp; Suggestions ↗</option>
+        </select>
 
+        <div class="portal-shell">
+          <aside class="portal-sidebar" aria-label="Member portal navigation">
+            <div class="portal-sidebar-title">Member Portal</div>
+            <button class="portal-nav-button active" type="button"
+              data-portal-target="overview">Overview</button>
+            <button class="portal-nav-button" type="button"
+              data-portal-target="maaladharan">Maaladharan</button>
+            ${hasDashboardAccess(member.role)
+              ? '<button class="portal-nav-button" type="button" data-portal-target="home-pooja">Home Pooja</button>'
+              : ""}
+            <button class="portal-nav-button" type="button"
+              data-portal-target="donations">Donations</button>
+            <button class="portal-nav-button" type="button"
+              data-portal-target="seva">Seva &amp; Volunteering</button>
+            ${hasDashboardAccess(member.role)
+              ? '<button class="portal-nav-button" type="button" data-portal-target="administration">Administration</button>'
+              : ""}
+            <a class="portal-nav-link" href="/feedback.html" target="_blank"
+              rel="noopener noreferrer">Feedback &amp; Suggestions ↗</a>
+          </aside>
 
-
-        <div class="grid">
-
-
-          ${renderFamilyDetailsSection(member)}
-
-
-
-          ${renderContactSection(member)}
-
-
-          ${renderMaaladharanSection(
-            currentMaaladharan
-          )}
-
-
-          ${
-            hasDashboardAccess(member.role)
-              ? renderHomePoojaPreview(
-                  currentHomePooja
-                )
-              : ""
-          }
-
-
-          ${renderDonationSection(
-            currentDonations
-          )}
-
-
-
-          ${renderVolunteerSection(
-            currentVolunteers
-          )}
-
-
-
-          ${renderPreferencesSection(member)}
-
-        </div>
-
-
-
-        ${
-          hasDashboardAccess(
-            member.role
-          )
-
-            ? `
-
-              <div class="dashboard">
-
-
-                <div class="dashboard-header">
-
-                  <h2>
-                    AAYSSA Dashboard
-                  </h2>
-
-                  <p>
-                    Organization-wide membership
-                    and volunteer overview
-                  </p>
-
-                </div>
-
-
-                <div
-                  id="dashboardStats"
-                  class="dashboard-loading"
-                >
-                  Loading dashboard statistics...
-                </div>
-
+          <div class="portal-content">
+            <section class="portal-panel" data-portal-panel="overview">
+              <h2 class="portal-panel-title">Membership Overview</h2>
+              <div class="maaladharan-whatsapp-invite">
+                Stay connected with the AAYSSA family on WhatsApp.
+                <a href="https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t"
+                  target="_blank" rel="noopener noreferrer">Join the AAYSSA Family WhatsApp Group</a>.
               </div>
-            `
+              <div class="grid">
+                ${renderFamilyDetailsSection(member)}
+                ${renderContactSection(member)}
+                ${renderPreferencesSection(member)}
+              </div>
+            </section>
 
-            : ""
-        }
+            <section class="portal-panel" data-portal-panel="maaladharan" hidden>
+              <div class="grid">
+                ${renderMaaladharanSection(currentMaaladharan)}
+              </div>
+            </section>
+
+            ${hasDashboardAccess(member.role)
+              ? `
+                <section class="portal-panel" data-portal-panel="home-pooja" hidden>
+                  <div class="grid">
+                    ${renderHomePoojaPreview(currentHomePooja)}
+                  </div>
+                </section>
+              `
+              : ""}
+
+            <section class="portal-panel" data-portal-panel="donations" hidden>
+              <div class="grid">
+                ${renderDonationSection(currentDonations)}
+              </div>
+            </section>
+
+            <section class="portal-panel" data-portal-panel="seva" hidden>
+              <div class="grid">
+                ${renderVolunteerSection(currentVolunteers)}
+              </div>
+            </section>
+
+            ${hasDashboardAccess(member.role)
+              ? `
+                <section class="portal-panel" data-portal-panel="administration" hidden>
+                  <div class="dashboard">
+                    <div class="dashboard-header">
+                      <h2>AAYSSA Dashboard</h2>
+                      <p>Organization-wide membership and volunteer overview</p>
+                    </div>
+                    <div id="dashboardStats" class="dashboard-loading">
+                      Loading dashboard statistics...
+                    </div>
+                  </div>
+                </section>
+              `
+              : ""}
+          </div>
+        </div>
 
       `;
 
@@ -7017,6 +7192,7 @@
       setupVolunteerEditing();
       setupProfileEditing();
       setupMaaladharanForm();
+      setupPortalNavigation();
       if (hasDashboardAccess(member.role)) {
         try {
           setupHomePoojaForm();
