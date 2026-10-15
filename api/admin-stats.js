@@ -9,6 +9,9 @@ import {
 import {
   handleFeedbackDigest
 } from "./_lib/feedback.js";
+import {
+  handleRsvpReminders
+} from "./_lib/rsvp.js";
 
 const ZEFFY_API_BASE_URL =
   "https://api.zeffy.com/api/v1";
@@ -20,6 +23,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "feedback-digest") {
     return handleFeedbackDigest(req, res);
+  }
+
+  if (req.query?.resource === "rsvp-reminders") {
+    return handleRsvpReminders(req, res);
   }
 
   if (req.method !== "GET") {

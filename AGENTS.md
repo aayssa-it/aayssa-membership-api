@@ -170,6 +170,12 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `POST /api/register?resource=rsvp`
   - Public RSVP submission for an active Home Pooja booking.
   - Validates that the referenced booking row is still active, then stores the attendee response in `AAYSSA_RSVP` (table `1264849` by default).
+  - Sends a best-effort Resend confirmation to the attendee after the RSVP is saved.
+
+- `GET /api/admin-stats?resource=rsvp-reminders`
+  - `CRON_SECRET`-protected daily Vercel cron endpoint.
+  - Sends a reminder to Attending and Maybe RSVP responses one day before the linked active Home Pooja booking. Resend idempotency keys prevent duplicate reminder delivery when the cron retries.
+  - Sends each host a preliminary attendee summary two calendar days before the pooja and a final summary on the morning of the pooja. Summaries separate Attending and Maybe household/adult/kid totals and include attendee names and notes.
 
 - `POST /api/login`
   - Starts Supabase email OTP/passcode login.
