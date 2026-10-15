@@ -5,6 +5,9 @@ import {
   getBaserowBaseUrl,
   getBaserowHeaders
 } from "./aayssa.js";
+import {
+  fetchPublicRsvpSummaries
+} from "./rsvp.js";
 
 const TABLE_ID =
   process.env.BASEROW_HOME_POOJA_TABLE_ID || "1240702";
@@ -883,6 +886,28 @@ async function buildPublicCalendar(
           }
         : {})
     });
+  }
+
+  if (includeBookingDetails) {
+    try {
+      const bookingIds = dates
+        .map(item => item.bookingId)
+        .filter(Boolean);
+      const summaries = await fetchPublicRsvpSummaries(bookingIds);
+
+      for (const item of dates) {
+        if (item.bookingId) {
+          item.rsvpSummary = summaries.get(item.bookingId) || {
+            attendingResponses: 0,
+            attendingGuests: 0,
+            maybeResponses: 0,
+            maybeGuests: 0
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Unable to load public RSVP totals:", error);
+    }
   }
 
   return {

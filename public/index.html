@@ -2709,6 +2709,9 @@
               ${item?.poojaAddress
                 ? `<small class="pooja-calendar-booking-address">${escapeHtml(item.poojaAddress)}</small>`
                 : ""}
+              ${item?.rsvpSummary
+                ? `<small>${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
+                : ""}
             `
             : "";
 

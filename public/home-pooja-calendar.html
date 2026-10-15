@@ -116,6 +116,7 @@
     .day.booked { border-color: #e3b95e; background: #fff0c9; color: #704300; }
     .day.blocked { border-color: #d5d1cc; background: #ece9e5; color: #6f6962; }
     .rsvp-button { margin-top: 8px; padding: 6px 10px; font-size: 12px; }
+    .rsvp-count { color: #5d3a08; font-weight: 700; }
     .message { padding: 30px; color: #666; text-align: center; }
     .message.error { color: #a32626; }
     dialog { width: min(520px, calc(100% - 24px)); border: 0; border-radius: 14px; padding: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
@@ -253,10 +254,14 @@
         const rsvpButton = status === "Booked" && item.bookingId
           ? `<button type="button" class="rsvp-button" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">RSVP</button>`
           : "";
+        const rsvpSummary = status === "Booked" && item.rsvpSummary
+          ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
+          : "";
         cells.push(`
           <div class="day ${escapeHtml(statusClass)}">
             <strong>${day}</strong>
             ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+            ${rsvpSummary}
             ${rsvpButton}
           </div>
         `);

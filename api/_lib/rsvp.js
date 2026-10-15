@@ -213,6 +213,41 @@ export async function handleRsvpReminders(req, res) {
   }
 }
 
+export async function fetchPublicRsvpSummaries(bookingIds) {
+  const wanted = new Set(
+    bookingIds.map(Number).filter(id => Number.isInteger(id) && id > 0)
+  );
+  const summaries = new Map();
+
+  if (!wanted.size) return summaries;
+
+  const rsvps = (await fetchAllRows(RSVP_TABLE_ID))
+    .map(mapRsvpRow)
+    .filter(rsvp => wanted.has(rsvp.bookingId));
+
+  for (const rsvp of rsvps) {
+    if (!["Attending", "Maybe"].includes(rsvp.status)) continue;
+    const summary = summaries.get(rsvp.bookingId) || {
+      attendingResponses: 0,
+      attendingGuests: 0,
+      maybeResponses: 0,
+      maybeGuests: 0
+    };
+    const guests = rsvp.adults + rsvp.kids;
+
+    if (rsvp.status === "Attending") {
+      summary.attendingResponses += 1;
+      summary.attendingGuests += guests;
+    } else {
+      summary.maybeResponses += 1;
+      summary.maybeGuests += guests;
+    }
+    summaries.set(rsvp.bookingId, summary);
+  }
+
+  return summaries;
+}
+
 async function assertActiveBooking(bookingId) {
   const response = await fetch(
     `${getBaserowBaseUrl()}/api/database/rows/table/${HOME_POOJA_TABLE_ID}/${bookingId}/?user_field_names=false`,
