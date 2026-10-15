@@ -480,6 +480,37 @@ export async function handleAdminHomePooja(req, res) {
         [fieldKey(FIELDS.approvedBy)]: auth.normalizedEmail,
         [fieldKey(FIELDS.approvedOn)]: todayInEasternTime()
       });
+    } else if (action === "cancel-booking") {
+      if (getSelect(row, FIELDS.entryType) !== "Booking") {
+        return badRequest(
+          res,
+          "Only Home Pooja bookings can be cancelled."
+        );
+      }
+
+      const currentStatus =
+        getSelect(row, FIELDS.requestStatus);
+
+      if (!["Approved", "Submitted"].includes(currentStatus)) {
+        return badRequest(
+          res,
+          "This Home Pooja booking is not active."
+        );
+      }
+
+      await patchEntry(id, {
+        [fieldKey(FIELDS.requestStatus)]:
+          await selectOptionId(
+            FIELDS.requestStatus,
+            "Cancelled"
+          ),
+        [fieldKey(FIELDS.adminNotes)]:
+          notes || "Booking cancelled by administrator",
+        [fieldKey(FIELDS.approvedBy)]:
+          auth.normalizedEmail,
+        [fieldKey(FIELDS.approvedOn)]:
+          todayInEasternTime()
+      });
     } else if (action === "unblock") {
       if (getSelect(row, FIELDS.entryType) !== "Blocked") {
         return badRequest(

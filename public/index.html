@@ -5378,6 +5378,15 @@
                       type="button" data-action="edit-booking">
                       Edit Booking
                     </button>
+                    ${["Approved", "Submitted"].includes(item.status)
+                      ? `
+                        <button class="danger-button" type="button"
+                          data-action="cancel-booking">
+                          Cancel Booking
+                        </button>
+                      `
+                      : ""
+                    }
                   </div>
                   <form class="maaladharan-form home-pooja-booking-edit-form"
                     hidden>
@@ -5689,6 +5698,27 @@
             editForm.hidden = true;
           }
 
+          return;
+        }
+
+        if (button.dataset.action === "cancel-booking") {
+          const row = button.closest("[data-home-pooja-id]");
+
+          if (!window.confirm(
+            "Cancel this Home Pooja booking and return the date to availability?"
+          )) {
+            return;
+          }
+
+          await submitHomePoojaAdminAction(
+            "PATCH",
+            {
+              id: Number(row.dataset.homePoojaId),
+              action: "cancel-booking",
+              adminNotes:
+                "Booking cancelled by Board/Admin"
+            }
+          );
           return;
         }
 

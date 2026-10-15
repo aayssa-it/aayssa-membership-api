@@ -312,6 +312,7 @@ Board/Admin dashboard includes:
 - Board/Admin Home Pooja booking review without an approval step.
 - Home Pooja Bookings and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
+- Board/Admin can cancel an active Home Pooja booking after confirmation. The row remains for audit history with `Cancelled` status, while the date immediately returns to availability when its normal or custom availability rule permits.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
 - Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column.
 - Automatically generated Friday/Saturday/Sunday availability ends after December 12, 2026. Later dates are empty by default and appear only when Board/Admin adds availability; removed availability also renders as an ordinary empty calendar day rather than an `Unavailable` state.
