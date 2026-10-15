@@ -18,6 +18,9 @@ Public member login:
 Public feedback form:
 `https://portal.atlantaayyappasevasangam.org/feedback.html`
 
+Public Home Pooja calendar:
+`https://portal.atlantaayyappasevasangam.org/home-pooja-calendar.html`
+
 ## Tech Stack
 
 - Hosting/API: Vercel serverless functions.
@@ -84,7 +87,7 @@ Home Pooja booking table:
 - Public bookings require Supabase email verification; matching members are linked by normalized email.
 - New bookings are stored immediately with `Approved` status on a first-come, first-served basis; `Cancelled` and `Blocked` remain available for calendar management.
 - Legacy `Submitted` Home Pooja rows are treated as booked so dates claimed before the workflow change remain reserved.
-- Approved bookings are exposed as booked dates on the privacy-safe public calendar.
+- Approved bookings are exposed on the public calendar with host name, scheduled time, and address; email and phone remain private.
 
 Feedback table:
 - Name: `AAYSSA_Feedbacks`
@@ -152,10 +155,9 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Does not expose public read, edit, or withdrawal operations.
 
 - `GET /api/register?resource=home-pooja`
-  - Legacy disabled endpoint; no standalone Home Pooja frontend is shipped or planned.
-  - Returns the privacy-safe Home Pooja calendar if explicitly enabled.
-  - Exposes availability and booked/blocked state, but no requester details.
-  - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
+  - Public read-only endpoint used by the standalone Home Pooja calendar.
+  - Exposes availability and booked/blocked state. Public booked dates include host name, scheduled time, and address, but never email address or phone number.
+  - Does not require `HOME_POOJA_PUBLIC_ENABLED`; that flag continues to gate public booking submissions only.
 
 - `POST /api/register?resource=home-pooja`
   - Legacy disabled public booking flow using `request-code` and `submit` actions; no standalone frontend consumes it.
@@ -348,6 +350,10 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 ## Public Feedback Form
 
 `public/feedback.html` is a standalone hosted form. It supports anonymous submission by default, optional name/email/phone, conditional permission to contact, required category selection, spam honeypot protection, and a confirmation screen.
+
+## Public Home Pooja Calendar
+
+`public/home-pooja-calendar.html` is a full-page, read-only calendar for non-members. It supports month navigation and displays the host name, scheduled time, and address for booked dates; phone numbers and email addresses remain private.
 
 ## Public Maaladharan Registration Embed
 

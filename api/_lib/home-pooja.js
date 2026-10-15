@@ -57,23 +57,26 @@ const AVAILABILITY_REMOVED_NOTE =
   "Home Pooja availability removed";
 
 export async function handlePublicHomePooja(req, res) {
-  if (process.env.HOME_POOJA_PUBLIC_ENABLED !== "true") {
-    return res.status(404).json({
-      success: false,
-      message: "Home Pooja booking is not yet open to the public."
-    });
-  }
-
   if (req.method === "GET") {
     try {
       return res.status(200).json({
         success: true,
         calendar:
-          await buildPublicCalendar(req.query)
+          await buildPublicCalendar(
+            req.query,
+            { includeBookingDetails: true }
+          )
       });
     } catch (error) {
       return handleError(res, error);
     }
+  }
+
+  if (process.env.HOME_POOJA_PUBLIC_ENABLED !== "true") {
+    return res.status(404).json({
+      success: false,
+      message: "Public Home Pooja booking is not enabled."
+    });
   }
 
   if (req.method !== "POST") {
