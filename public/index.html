@@ -5373,40 +5373,51 @@
                       ? `<span>${escapeHtml(item.requesterNote)}</span>`
                       : ""
                   }
-                  <div class="home-pooja-block-actions">
-                    <button class="small-action-button"
-                      type="button" data-action="edit-booking">
-                      Edit Booking
-                    </button>
-                    ${["Approved", "Submitted"].includes(item.status)
-                      ? `
+                  ${["Approved", "Submitted"].includes(item.status)
+                    ? `
+                      <div class="home-pooja-block-actions">
+                        <button class="small-action-button"
+                          type="button" data-action="edit-booking">
+                          Edit Booking
+                        </button>
                         <button class="danger-button" type="button"
                           data-action="cancel-booking">
                           Cancel Booking
                         </button>
-                      `
-                      : ""
-                    }
-                  </div>
-                  <form class="maaladharan-form home-pooja-booking-edit-form"
-                    hidden>
-                    <div class="form-field">
-                      <label>Scheduled Time</label>
-                      <input name="preferredTime" type="text"
-                        value="${escapeHtml(item.preferredTime || "")}" required>
-                    </div>
-                    <div class="form-field">
-                      <label>Pooja Address</label>
-                      <textarea name="poojaAddress"
-                        required>${escapeHtml(item.poojaAddress || "")}</textarea>
-                    </div>
-                    <div class="form-actions full-width">
-                      <button class="small-action-button"
-                        type="submit">Save Booking Changes</button>
-                      <button class="small-action-button secondary-button"
-                        type="button" data-action="cancel-booking-edit">Cancel</button>
-                    </div>
-                  </form>
+                      </div>
+                      <form class="maaladharan-form home-pooja-booking-edit-form"
+                        hidden>
+                        <div class="form-field">
+                          <label>Scheduled Time</label>
+                          <input name="preferredTime" type="text"
+                            value="${escapeHtml(item.preferredTime || "")}" required>
+                        </div>
+                        <div class="form-field">
+                          <label>Pooja Address</label>
+                          <textarea name="poojaAddress"
+                            required>${escapeHtml(item.poojaAddress || "")}</textarea>
+                        </div>
+                        <div class="form-actions full-width">
+                          <button class="small-action-button"
+                            type="submit">Save Booking Changes</button>
+                          <button class="small-action-button secondary-button"
+                            type="button" data-action="cancel-booking-edit">Cancel</button>
+                        </div>
+                      </form>
+                    `
+                    : ""
+                  }
+                  ${item.status === "Cancelled"
+                    ? `
+                      <div class="home-pooja-block-actions">
+                        <button class="small-action-button"
+                          type="button" data-action="send-cancellation-email">
+                          Send Cancellation Email
+                        </button>
+                      </div>
+                    `
+                    : ""
+                  }
                 </div>
                 `).join("")
               : "<p>No Home Pooja bookings.</p>"
@@ -5717,6 +5728,25 @@
               action: "cancel-booking",
               adminNotes:
                 "Booking cancelled by Board/Admin"
+            }
+          );
+          return;
+        }
+
+        if (button.dataset.action === "send-cancellation-email") {
+          const row = button.closest("[data-home-pooja-id]");
+
+          if (!window.confirm(
+            "Send the Home Pooja cancellation email to this host?"
+          )) {
+            return;
+          }
+
+          await submitHomePoojaAdminAction(
+            "PATCH",
+            {
+              id: Number(row.dataset.homePoojaId),
+              action: "send-cancellation-email"
             }
           );
           return;

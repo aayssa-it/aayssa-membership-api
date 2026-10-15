@@ -115,13 +115,29 @@
     .day.available { border-color: #b9dbc3; background: #e9f6ed; color: #1f6834; }
     .day.booked { border-color: #e3b95e; background: #fff0c9; color: #704300; }
     .day.blocked { border-color: #d5d1cc; background: #ece9e5; color: #6f6962; }
+    .rsvp-button { margin-top: 8px; padding: 6px 10px; font-size: 12px; }
     .message { padding: 30px; color: #666; text-align: center; }
     .message.error { color: #a32626; }
+    dialog { width: min(520px, calc(100% - 24px)); border: 0; border-radius: 14px; padding: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+    dialog::backdrop { background: rgba(34, 22, 12, .58); }
+    .rsvp-form { padding: 22px; }
+    .rsvp-form h2 { margin: 0 0 5px; color: #713d0d; }
+    .rsvp-form p { margin: 0 0 16px; color: #625950; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    .form-grid label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
+    .form-grid .full { grid-column: 1 / -1; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cfc4b8; border-radius: 7px; font: inherit; }
+    textarea { min-height: 80px; resize: vertical; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 17px; }
+    .form-message { margin-top: 12px; font-size: 14px; }
+    .form-message.error { color: #a32626; }
     @media (max-width: 600px) {
       main { width: min(100% - 18px, 1050px); margin-top: 12px; }
       .calendar-card { padding: 14px; }
       .navigation strong { font-size: 18px; }
       button { padding: 8px 10px; font-size: 13px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: auto; }
     }
   </style>
 </head>
@@ -145,8 +161,38 @@
       <div id="calendar" class="message">Loading calendar…</div>
     </section>
   </main>
+  <dialog id="rsvpDialog">
+    <form id="rsvpForm" class="rsvp-form">
+      <h2>Home Pooja RSVP</h2>
+      <p id="rsvpEvent"></p>
+      <input type="hidden" name="bookingId">
+      <input type="text" name="website" tabindex="-1" autocomplete="off" hidden>
+      <div class="form-grid">
+        <label class="full">Attendee Name *<input name="attendeeName" maxlength="150" required></label>
+        <label>Email *<input name="email" type="email" maxlength="254" required></label>
+        <label>Phone<input name="phone" type="tel" maxlength="100"></label>
+        <label>RSVP Status *
+          <select name="status" required>
+            <option value="Attending">Attending</option>
+            <option value="Maybe">Maybe</option>
+            <option value="Not Attending">Not Attending</option>
+          </select>
+        </label>
+        <label>Number of Adults *<input name="adults" type="number" min="0" step="1" value="1" required></label>
+        <label>Number of Kids *<input name="kids" type="number" min="0" step="1" value="0" required></label>
+        <label class="full">Notes<textarea name="notes" maxlength="2000"></textarea></label>
+      </div>
+      <div id="rsvpMessage" class="form-message" role="status"></div>
+      <div class="form-actions">
+        <button type="button" id="cancelRsvp">Cancel</button>
+        <button type="submit" id="submitRsvp">Submit RSVP</button>
+      </div>
+    </form>
+  </dialog>
   <script>
     const calendar = document.getElementById("calendar");
+    const rsvpDialog = document.getElementById("rsvpDialog");
+    const rsvpForm = document.getElementById("rsvpForm");
     let dates = [];
     let monthKeys = [];
     let currentMonthIndex = 0;
@@ -204,10 +250,14 @@
             : status === "Available"
               ? item.time
               : "";
+        const rsvpButton = status === "Booked" && item.bookingId
+          ? `<button type="button" class="rsvp-button" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">RSVP</button>`
+          : "";
         cells.push(`
           <div class="day ${escapeHtml(statusClass)}">
             <strong>${day}</strong>
             ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+            ${rsvpButton}
           </div>
         `);
       }
@@ -239,7 +289,52 @@
         currentMonthIndex += 1;
         renderCalendar();
       });
+      calendar.querySelectorAll("[data-booking-id]").forEach(button => {
+        button.addEventListener("click", () => openRsvp(button));
+      });
     }
+
+    function openRsvp(button) {
+      rsvpForm.reset();
+      rsvpForm.elements.bookingId.value = button.dataset.bookingId;
+      rsvpForm.elements.adults.value = "1";
+      rsvpForm.elements.kids.value = "0";
+      document.getElementById("rsvpEvent").textContent = button.dataset.event;
+      document.getElementById("rsvpMessage").textContent = "";
+      rsvpDialog.showModal();
+    }
+
+    document.getElementById("cancelRsvp").addEventListener("click", () => rsvpDialog.close());
+
+    rsvpForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const submitButton = document.getElementById("submitRsvp");
+      const message = document.getElementById("rsvpMessage");
+      const values = Object.fromEntries(new FormData(rsvpForm));
+      values.adults = Number(values.adults);
+      values.kids = Number(values.kids);
+      submitButton.disabled = true;
+      message.className = "form-message";
+      message.textContent = "Submitting…";
+
+      try {
+        const response = await fetch("/api/register?resource=rsvp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Unable to submit your RSVP.");
+        rsvpForm.reset();
+        message.textContent = data.message;
+        setTimeout(() => rsvpDialog.close(), 1400);
+      } catch (error) {
+        message.className = "form-message error";
+        message.textContent = error.message;
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
 
     function escapeHtml(value) {
       return String(value ?? "")

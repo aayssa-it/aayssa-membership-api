@@ -15,6 +15,9 @@ import {
 import {
   handlePublicFeedback
 } from "./_lib/feedback.js";
+import {
+  handlePublicRsvp
+} from "./_lib/rsvp.js";
 
 const AAYSSA_FAMILY_WHATSAPP_URL =
   "https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t";
@@ -64,6 +67,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "feedback") {
     return handlePublicFeedback(req, res);
+  }
+
+  if (req.query?.resource === "rsvp") {
+    return handlePublicRsvp(req, res);
   }
 
   if (req.method !== "POST") {

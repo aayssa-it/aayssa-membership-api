@@ -49,6 +49,7 @@ Do not expose server-side tokens in browser code.
 - `BASEROW_VOLUNTEERS_TABLE_ID`
 - `BASEROW_MAALADHARAN_TABLE_ID` (defaults to `1210688`)
 - `BASEROW_HOME_POOJA_TABLE_ID` (defaults to `1240702`)
+- `BASEROW_RSVP_TABLE_ID` (defaults to `1264849`)
 - `BASEROW_FEEDBACK_TABLE_ID` (defaults to `1262224`)
 - `HOME_POOJA_PUBLIC_ENABLED` is a legacy public-API gate and should remain unset/false because no standalone Home Pooja page is planned.
 - `ZEFFY_API_KEY`
@@ -165,6 +166,10 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Sends a best-effort Resend confirmation containing the booked date, scheduled time, address, status, optional requester note, and the shared Home Pooja checklist link.
   - Links the family automatically when the verified email matches a member.
   - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
+
+- `POST /api/register?resource=rsvp`
+  - Public RSVP submission for an active Home Pooja booking.
+  - Validates that the referenced booking row is still active, then stores the attendee response in `AAYSSA_RSVP` (table `1264849` by default).
 
 - `POST /api/login`
   - Starts Supabase email OTP/passcode login.
@@ -313,6 +318,7 @@ Board/Admin dashboard includes:
 - Home Pooja Bookings and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin can cancel an active Home Pooja booking after confirmation. The row remains for audit history with `Cancelled` status, while the date immediately returns to availability when its normal or custom availability rule permits.
+- Cancelling a Home Pooja booking sends the host a best-effort Resend cancellation email. Cancelled rows expose a Board/Admin action to send or resend the cancellation email, including for bookings cancelled before this feature was deployed.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
 - Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column.
 - Automatically generated Friday/Saturday/Sunday availability ends after December 12, 2026. Later dates are empty by default and appear only when Board/Admin adds availability; removed availability also renders as an ordinary empty calendar day rather than an `Unavailable` state.
@@ -354,7 +360,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page, read-only calendar for non-members. It supports month navigation and displays the host name, scheduled time, and address for booked dates; phone numbers and email addresses remain private.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, and address for booked dates; phone numbers and email addresses remain private. Each booked date has an RSVP form for Attending, Maybe, or Not Attending responses.
 
 ## Public Maaladharan Registration Embed
 

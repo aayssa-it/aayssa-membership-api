@@ -461,6 +461,8 @@ export async function handleAdminHomePooja(req, res) {
       });
     }
 
+    let responseMessage = "The calendar entry was updated.";
+
     if (action === "edit-booking") {
       if (getSelect(row, FIELDS.entryType) !== "Booking") {
         return badRequest(res, "Only Home Pooja bookings can be edited.");
@@ -511,6 +513,32 @@ export async function handleAdminHomePooja(req, res) {
         [fieldKey(FIELDS.approvedOn)]:
           todayInEasternTime()
       });
+      const emailSent =
+        await sendHomePoojaCancellationSafely(mapEntry(row));
+      responseMessage = emailSent
+        ? "The booking was cancelled and a cancellation email was sent."
+        : "The booking was cancelled, but the cancellation email could not be sent.";
+    } else if (action === "send-cancellation-email") {
+      if (
+        getSelect(row, FIELDS.entryType) !== "Booking" ||
+        getSelect(row, FIELDS.requestStatus) !== "Cancelled"
+      ) {
+        return badRequest(
+          res,
+          "Cancellation email is only available for cancelled bookings."
+        );
+      }
+
+      const emailSent =
+        await sendHomePoojaCancellationSafely(mapEntry(row));
+
+      if (!emailSent) {
+        const error = new Error("Unable to send the cancellation email.");
+        error.status = 502;
+        throw error;
+      }
+
+      responseMessage = "The cancellation email was sent.";
     } else if (action === "unblock") {
       if (getSelect(row, FIELDS.entryType) !== "Blocked") {
         return badRequest(
@@ -536,7 +564,7 @@ export async function handleAdminHomePooja(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: "The calendar entry was updated."
+      message: responseMessage
     });
   } catch (error) {
     return handleError(res, error);
@@ -775,6 +803,7 @@ async function buildPublicCalendar(
         reason: "Home Pooja booked",
         ...(includeBookingDetails
           ? {
+              bookingId: entry.id,
               requesterName:
                 entry.requesterName,
               bookingTime:
@@ -845,6 +874,8 @@ async function buildPublicCalendar(
         ? {
             requesterName:
               current.requesterName || "",
+            bookingId:
+              current.bookingId || null,
             bookingTime:
               current.bookingTime || time || "",
             poojaAddress:
@@ -991,6 +1022,88 @@ async function sendHomePoojaConfirmation({ email, request }) {
       await response.text()
     );
     throw new Error("Unable to send Home Pooja confirmation email.");
+  }
+}
+
+async function sendHomePoojaCancellationSafely(booking) {
+  try {
+    await sendHomePoojaCancellation(booking);
+    return true;
+  } catch (error) {
+    console.error("Home Pooja cancellation email error:", error);
+    return false;
+  }
+}
+
+async function sendHomePoojaCancellation(booking) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from =
+    process.env.RESEND_FROM_EMAIL ||
+    process.env.RESEND_FROM ||
+    process.env.EMAIL_FROM ||
+    process.env.FROM_EMAIL;
+  const email = normalizeEmail(booking.email);
+
+  if (!apiKey || !from) {
+    throw new Error("Resend cancellation email is not configured.");
+  }
+
+  if (!isValidEmail(email)) {
+    throw new Error("The cancelled booking does not have a valid email address.");
+  }
+
+  const date = formatHomePoojaEmailDate(booking.poojaDate);
+  const time = booking.preferredTime || "To be confirmed";
+  const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to: [email],
+      subject: `AAYSSA Home Pooja Booking Cancelled — ${date}`,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+      text: [
+        `Namaskaram ${booking.requesterName},`,
+        "",
+        "Your AAYSSA Home Pooja booking has been cancelled.",
+        `Date: ${date}`,
+        `Time: ${time}`,
+        `Address: ${booking.poojaAddress}`,
+        "Status: Cancelled",
+        "",
+        "Please contact AAYSSA if you have any questions.",
+        "",
+        "Atlanta Ayyappa Seva Sangam"
+      ].join("\n"),
+      html: `
+        <div style="font-family:Arial,sans-serif;color:#2c211a;line-height:1.6;max-width:620px;margin:auto">
+          <h2 style="color:#8a3f12">Home Pooja Booking Cancelled</h2>
+          <p>Namaskaram ${escapeHomePoojaEmailHtml(booking.requesterName)},</p>
+          <p>Your AAYSSA Home Pooja booking has been cancelled.</p>
+          <table style="border-collapse:collapse;width:100%;margin:20px 0">
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Date</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(date)}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Time</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(time)}</td></tr>
+            <tr><td style="padding:8px;border-bottom:1px solid #ead8c5"><strong>Address</strong></td><td style="padding:8px;border-bottom:1px solid #ead8c5">${escapeHomePoojaEmailHtml(booking.poojaAddress)}</td></tr>
+            <tr><td style="padding:8px"><strong>Status</strong></td><td style="padding:8px">Cancelled</td></tr>
+          </table>
+          <p>Please contact AAYSSA if you have any questions.</p>
+          <p>Atlanta Ayyappa Seva Sangam</p>
+        </div>
+      `
+    })
+  });
+
+  if (!response.ok) {
+    console.error(
+      "Resend Home Pooja cancellation failed:",
+      response.status,
+      await response.text()
+    );
+    throw new Error("Unable to send Home Pooja cancellation email.");
   }
 }
 
