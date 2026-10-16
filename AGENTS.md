@@ -368,7 +368,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts for booked dates; phone numbers, email addresses, and RSVP identities remain private. Each booked date has an RSVP form for Attending, Maybe, or Not Attending responses, plus an email-code verified Edit Existing RSVP flow.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts for booked dates; phone numbers, email addresses, and RSVP identities remain private. Each booked date has separate New RSVP and Edit RSVP buttons and dialogs; editing requires email-code verification.
 
 ## Public Maaladharan Registration Embed
 

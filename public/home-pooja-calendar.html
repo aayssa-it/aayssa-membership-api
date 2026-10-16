@@ -164,7 +164,7 @@
   </main>
   <dialog id="rsvpDialog">
     <form id="rsvpForm" class="rsvp-form">
-      <h2>Home Pooja RSVP</h2>
+      <h2>New Home Pooja RSVP</h2>
       <p id="rsvpEvent"></p>
       <input type="hidden" name="bookingId">
       <input type="text" name="website" tabindex="-1" autocomplete="off" hidden>
@@ -184,18 +184,51 @@
         <label class="full">Notes<textarea name="notes" maxlength="2000"></textarea></label>
       </div>
       <div id="rsvpMessage" class="form-message" role="status"></div>
-      <div id="rsvpVerification" class="form-grid" hidden>
+      <div class="form-actions">
+        <button type="button" id="cancelRsvp">Cancel</button>
+        <button type="submit" id="submitRsvp">Submit RSVP</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="editRsvpDialog">
+    <form id="editRsvpForm" class="rsvp-form">
+      <h2>Edit Home Pooja RSVP</h2>
+      <p id="editRsvpEvent"></p>
+      <input type="hidden" name="bookingId">
+      <div id="editRsvpLookup" class="form-grid">
+        <label class="full">Email Used for RSVP *
+          <input name="email" type="email" maxlength="254" required>
+        </label>
+        <div class="form-actions full">
+          <button type="button" id="sendEditCode">Send Verification Code</button>
+        </div>
+      </div>
+      <div id="editRsvpVerification" class="form-grid" hidden>
         <label class="full">Email Verification Code *
           <input name="verificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
         </label>
         <div class="form-actions full">
-          <button type="button" id="verifyRsvp">Verify and Load RSVP</button>
+          <button type="button" id="verifyEditRsvp">Verify and Load RSVP</button>
         </div>
       </div>
+      <div id="editRsvpFields" class="form-grid" hidden>
+        <label class="full">Attendee Name *<input name="attendeeName" maxlength="150"></label>
+        <label>Phone<input name="phone" type="tel" maxlength="100"></label>
+        <label>RSVP Status *
+          <select name="status">
+            <option value="Attending">Attending</option>
+            <option value="Maybe">Maybe</option>
+            <option value="Not Attending">Not Attending</option>
+          </select>
+        </label>
+        <label>Number of Adults *<input name="adults" type="number" min="0" step="1"></label>
+        <label>Number of Kids *<input name="kids" type="number" min="0" step="1"></label>
+        <label class="full">Notes<textarea name="notes" maxlength="2000"></textarea></label>
+      </div>
+      <div id="editRsvpMessage" class="form-message" role="status"></div>
       <div class="form-actions">
-        <button type="button" id="cancelRsvp">Cancel</button>
-        <button type="button" id="editRsvp">Edit Existing RSVP</button>
-        <button type="submit" id="submitRsvp">Submit RSVP</button>
+        <button type="button" id="cancelEditRsvp">Cancel</button>
+        <button type="submit" id="updateRsvp" hidden>Update RSVP</button>
       </div>
     </form>
   </dialog>
@@ -203,6 +236,8 @@
     const calendar = document.getElementById("calendar");
     const rsvpDialog = document.getElementById("rsvpDialog");
     const rsvpForm = document.getElementById("rsvpForm");
+    const editRsvpDialog = document.getElementById("editRsvpDialog");
+    const editRsvpForm = document.getElementById("editRsvpForm");
     let dates = [];
     let monthKeys = [];
     let currentMonthIndex = 0;
@@ -262,7 +297,8 @@
               ? item.time
               : "";
         const rsvpButton = status === "Booked" && item.bookingId
-          ? `<button type="button" class="rsvp-button" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">RSVP</button>`
+          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">New RSVP</button>
+             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">Edit RSVP</button>`
           : "";
         const rsvpSummary = status === "Booked" && item.rsvpSummary
           ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
@@ -305,13 +341,15 @@
         renderCalendar();
       });
       calendar.querySelectorAll("[data-booking-id]").forEach(button => {
-        button.addEventListener("click", () => openRsvp(button));
+        button.addEventListener("click", () => {
+          if (button.dataset.rsvpAction === "edit") openEditRsvp(button);
+          else openRsvp(button);
+        });
       });
     }
 
     function openRsvp(button) {
       rsvpForm.reset();
-      resetRsvpEditMode();
       rsvpForm.elements.bookingId.value = button.dataset.bookingId;
       rsvpForm.elements.adults.value = "1";
       rsvpForm.elements.kids.value = "0";
@@ -320,26 +358,34 @@
       rsvpDialog.showModal();
     }
 
-    document.getElementById("cancelRsvp").addEventListener("click", () => rsvpDialog.close());
+    function openEditRsvp(button) {
+      editRsvpForm.reset();
+      resetEditRsvpDialog();
+      editRsvpForm.elements.bookingId.value = button.dataset.bookingId;
+      document.getElementById("editRsvpEvent").textContent = button.dataset.event;
+      editRsvpDialog.showModal();
+    }
 
-    document.getElementById("editRsvp").addEventListener("click", async () => {
-      const emailInput = rsvpForm.elements.email;
+    document.getElementById("cancelRsvp").addEventListener("click", () => rsvpDialog.close());
+    document.getElementById("cancelEditRsvp").addEventListener("click", () => editRsvpDialog.close());
+
+    document.getElementById("sendEditCode").addEventListener("click", async () => {
+      const emailInput = editRsvpForm.elements.email;
       if (!emailInput.reportValidity()) return;
-      const button = document.getElementById("editRsvp");
-      const message = document.getElementById("rsvpMessage");
+      const button = document.getElementById("sendEditCode");
+      const message = document.getElementById("editRsvpMessage");
       button.disabled = true;
       message.className = "form-message";
       message.textContent = "Sending verification code…";
       try {
         const data = await postRsvpAction({
           action: "request-edit-code",
-          bookingId: rsvpForm.elements.bookingId.value,
+          bookingId: editRsvpForm.elements.bookingId.value,
           email: emailInput.value
         });
-        document.getElementById("rsvpVerification").hidden = false;
-        document.getElementById("submitRsvp").hidden = true;
-        rsvpForm.elements.verificationCode.required = true;
-        rsvpForm.elements.verificationCode.focus();
+        document.getElementById("editRsvpVerification").hidden = false;
+        editRsvpForm.elements.verificationCode.required = true;
+        editRsvpForm.elements.verificationCode.focus();
         message.textContent = data.message;
       } catch (error) {
         message.className = "form-message error";
@@ -349,36 +395,40 @@
       }
     });
 
-    document.getElementById("verifyRsvp").addEventListener("click", async () => {
-      const codeInput = rsvpForm.elements.verificationCode;
+    document.getElementById("verifyEditRsvp").addEventListener("click", async () => {
+      const codeInput = editRsvpForm.elements.verificationCode;
       if (!codeInput.reportValidity()) return;
-      const button = document.getElementById("verifyRsvp");
-      const message = document.getElementById("rsvpMessage");
+      const button = document.getElementById("verifyEditRsvp");
+      const message = document.getElementById("editRsvpMessage");
       button.disabled = true;
       message.className = "form-message";
       message.textContent = "Verifying…";
       try {
         const data = await postRsvpAction({
           action: "verify-edit-code",
-          bookingId: rsvpForm.elements.bookingId.value,
-          email: rsvpForm.elements.email.value,
+          bookingId: editRsvpForm.elements.bookingId.value,
+          email: editRsvpForm.elements.email.value,
           code: codeInput.value
         });
         const existing = data.rsvp;
         rsvpEditToken = data.editToken;
-        rsvpForm.elements.attendeeName.value = existing.attendeeName || "";
-        rsvpForm.elements.email.value = existing.email || "";
-        rsvpForm.elements.email.readOnly = true;
-        rsvpForm.elements.phone.value = existing.phone || "";
-        rsvpForm.elements.status.value = existing.status || "Attending";
-        rsvpForm.elements.adults.value = existing.adults ?? 0;
-        rsvpForm.elements.kids.value = existing.kids ?? 0;
-        rsvpForm.elements.notes.value = existing.notes || "";
-        document.getElementById("rsvpVerification").hidden = true;
+        editRsvpForm.elements.attendeeName.value = existing.attendeeName || "";
+        editRsvpForm.elements.email.value = existing.email || "";
+        editRsvpForm.elements.email.readOnly = true;
+        editRsvpForm.elements.phone.value = existing.phone || "";
+        editRsvpForm.elements.status.value = existing.status || "Attending";
+        editRsvpForm.elements.adults.value = existing.adults ?? 0;
+        editRsvpForm.elements.kids.value = existing.kids ?? 0;
+        editRsvpForm.elements.notes.value = existing.notes || "";
+        editRsvpForm.elements.attendeeName.required = true;
+        editRsvpForm.elements.status.required = true;
+        editRsvpForm.elements.adults.required = true;
+        editRsvpForm.elements.kids.required = true;
+        document.getElementById("editRsvpLookup").hidden = true;
+        document.getElementById("editRsvpVerification").hidden = true;
+        document.getElementById("editRsvpFields").hidden = false;
         codeInput.required = false;
-        document.getElementById("editRsvp").hidden = true;
-        document.getElementById("submitRsvp").textContent = "Update RSVP";
-        document.getElementById("submitRsvp").hidden = false;
+        document.getElementById("updateRsvp").hidden = false;
         message.textContent = "Your RSVP is ready to edit.";
       } catch (error) {
         message.className = "form-message error";
@@ -393,8 +443,7 @@
       const submitButton = document.getElementById("submitRsvp");
       const message = document.getElementById("rsvpMessage");
       const values = Object.fromEntries(new FormData(rsvpForm));
-      values.action = rsvpEditToken ? "update" : "submit";
-      values.editToken = rsvpEditToken;
+      values.action = "submit";
       values.adults = Number(values.adults);
       values.kids = Number(values.kids);
       submitButton.disabled = true;
@@ -404,9 +453,33 @@
       try {
         const data = await postRsvpAction(values);
         rsvpForm.reset();
-        resetRsvpEditMode();
         message.textContent = data.message;
         setTimeout(() => rsvpDialog.close(), 1400);
+      } catch (error) {
+        message.className = "form-message error";
+        message.textContent = error.message;
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    editRsvpForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!rsvpEditToken) return;
+      const submitButton = document.getElementById("updateRsvp");
+      const message = document.getElementById("editRsvpMessage");
+      const values = Object.fromEntries(new FormData(editRsvpForm));
+      values.action = "update";
+      values.editToken = rsvpEditToken;
+      values.adults = Number(values.adults);
+      values.kids = Number(values.kids);
+      submitButton.disabled = true;
+      message.className = "form-message";
+      message.textContent = "Updating…";
+      try {
+        const data = await postRsvpAction(values);
+        message.textContent = data.message;
+        setTimeout(() => editRsvpDialog.close(), 1400);
       } catch (error) {
         message.className = "form-message error";
         message.textContent = error.message;
@@ -428,14 +501,19 @@
       return data;
     }
 
-    function resetRsvpEditMode() {
+    function resetEditRsvpDialog() {
       rsvpEditToken = "";
-      rsvpForm.elements.email.readOnly = false;
-      rsvpForm.elements.verificationCode.required = false;
-      document.getElementById("rsvpVerification").hidden = true;
-      document.getElementById("editRsvp").hidden = false;
-      document.getElementById("submitRsvp").textContent = "Submit RSVP";
-      document.getElementById("submitRsvp").hidden = false;
+      editRsvpForm.elements.email.readOnly = false;
+      editRsvpForm.elements.verificationCode.required = false;
+      editRsvpForm.elements.attendeeName.required = false;
+      editRsvpForm.elements.status.required = false;
+      editRsvpForm.elements.adults.required = false;
+      editRsvpForm.elements.kids.required = false;
+      document.getElementById("editRsvpLookup").hidden = false;
+      document.getElementById("editRsvpVerification").hidden = true;
+      document.getElementById("editRsvpFields").hidden = true;
+      document.getElementById("updateRsvp").hidden = true;
+      document.getElementById("editRsvpMessage").textContent = "";
     }
 
     function escapeHtml(value) {
