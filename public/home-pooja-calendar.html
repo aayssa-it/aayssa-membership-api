@@ -300,8 +300,8 @@
           ? String(item.bookingId)
           : item?.eventReference || "";
         const rsvpLabel = status === "Blocked"
-          ? item.eventName || item.reason || "AAYSSA Event"
-          : item.requesterName || "Home Pooja";
+          ? item?.eventName || item?.reason || "AAYSSA Event"
+          : item?.requesterName || "Home Pooja";
         const rsvpButton = rsvpReference
           ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
              <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>`
