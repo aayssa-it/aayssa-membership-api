@@ -1352,7 +1352,46 @@ export async function fetchMaaladharanDashboardSummary() {
   const dateMap =
     new Map();
 
+  const overallStats = {
+    totalRegistrations: registrations.length,
+    primary: 0,
+    additionalMember: 0,
+    kanniSwamy: 0,
+    nonKanni: 0,
+    yatraSelected: 0,
+    yatraNotSelected: 0,
+    adults: 0,
+    under18: 0
+  };
+
   for (const registration of registrations) {
+    if (registration.participantType === "Primary") {
+      overallStats.primary += 1;
+    } else {
+      overallStats.additionalMember += 1;
+    }
+
+    if (
+      registration.firstDeeksha ||
+      registration.padiStatus === "0 (Kanni Swamy)"
+    ) {
+      overallStats.kanniSwamy += 1;
+    } else {
+      overallStats.nonKanni += 1;
+    }
+
+    if (registration.irumudiOffering === "Tampa Temple") {
+      overallStats.yatraSelected += 1;
+    } else {
+      overallStats.yatraNotSelected += 1;
+    }
+
+    if (registration.age >= 18) {
+      overallStats.adults += 1;
+    } else {
+      overallStats.under18 += 1;
+    }
+
     if (padiMap.has(registration.padiStatus)) {
       padiMap.set(
         registration.padiStatus,
@@ -1377,6 +1416,7 @@ export async function fetchMaaladharanDashboardSummary() {
     available: true,
     season: SEASON,
     totalSwamies: registrations.length,
+    overallStats,
     registeredSwamies:
       registrations
         .map(registration => ({

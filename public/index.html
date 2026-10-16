@@ -1223,6 +1223,16 @@
       margin-top: 0;
     }
 
+    .maaladharan-dashboard-grid > .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .registered-swamies-table .overall-total-row td {
+      background: #fff3dc;
+      color: #5f2b10;
+      font-weight: 800;
+    }
+
     .dashboard-trend-grid .trend-card {
       min-width: 0;
       margin-top: 0;
@@ -5977,6 +5987,8 @@
   ) {
     return `
       <div class="dashboard-grid maaladharan-dashboard-grid">
+        ${renderMaaladharanOverallStats(summary?.overallStats)}
+
         ${renderCountChart({
           title: "Swamies by Maaladharan Date",
           subtitle:
@@ -5990,6 +6002,40 @@
         ${renderRegisteredSwamies(
           summary?.registeredSwamies
         )}
+      </div>
+    `;
+  }
+
+  function renderMaaladharanOverallStats(stats) {
+    const rows = [
+      ["Total registrations", stats?.totalRegistrations],
+      ["Primary", stats?.primary],
+      ["Additional Member", stats?.additionalMember],
+      ["Kanni Swamy", stats?.kanniSwamy],
+      ["Non-Kanni", stats?.nonKanni],
+      ["Yatra selected", stats?.yatraSelected],
+      ["Yatra not selected", stats?.yatraNotSelected],
+      ["Adults (18+)", stats?.adults],
+      ["Under 18", stats?.under18]
+    ];
+
+    return `
+      <div class="trend-card full-width">
+        <h3>Overall Maaladharan Status</h3>
+        <div class="trend-subtitle">2026–27 Mandalam registration breakdown</div>
+        <div class="table-wrapper">
+          <table class="registered-swamies-table">
+            <thead><tr><th>Category</th><th>Breakdown</th></tr></thead>
+            <tbody>
+              ${rows.map(([label, value], index) => `
+                <tr${index === 0 ? ' class="overall-total-row"' : ""}>
+                  <td>${escapeHtml(label)}</td>
+                  <td><strong>${Number(value) || 0}</strong></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
   }
