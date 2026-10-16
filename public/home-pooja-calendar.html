@@ -166,7 +166,7 @@
     <form id="rsvpForm" class="rsvp-form">
       <h2>New Home Pooja RSVP</h2>
       <p id="rsvpEvent"></p>
-      <input type="hidden" name="bookingId">
+      <input type="hidden" name="bookingReference">
       <input type="text" name="website" tabindex="-1" autocomplete="off" hidden>
       <div class="form-grid">
         <label class="full">Attendee Name *<input name="attendeeName" maxlength="150" required></label>
@@ -194,7 +194,7 @@
     <form id="editRsvpForm" class="rsvp-form">
       <h2>Edit Home Pooja RSVP</h2>
       <p id="editRsvpEvent"></p>
-      <input type="hidden" name="bookingId">
+      <input type="hidden" name="bookingReference">
       <div id="editRsvpLookup" class="form-grid">
         <label class="full">Email Used for RSVP *
           <input name="email" type="email" maxlength="254" required>
@@ -296,11 +296,17 @@
             : status === "Available"
               ? item.time
               : "";
-        const rsvpButton = status === "Booked" && item.bookingId
-          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">New RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-booking-id="${Number(item.bookingId)}" data-event="${escapeHtml(`${date} · ${item.requesterName || "Home Pooja"}`)}">Edit RSVP</button>`
+        const rsvpReference = item?.bookingId
+          ? String(item.bookingId)
+          : item?.eventReference || "";
+        const rsvpLabel = status === "Blocked"
+          ? item.eventName || item.reason || "AAYSSA Event"
+          : item.requesterName || "Home Pooja";
+        const rsvpButton = rsvpReference
+          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
+             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>`
           : "";
-        const rsvpSummary = status === "Booked" && item.rsvpSummary
+        const rsvpSummary = (status === "Booked" || status === "Blocked") && item.rsvpSummary
           ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
           : "";
         cells.push(`
@@ -340,7 +346,7 @@
         currentMonthIndex += 1;
         renderCalendar();
       });
-      calendar.querySelectorAll("[data-booking-id]").forEach(button => {
+      calendar.querySelectorAll("[data-rsvp-reference]").forEach(button => {
         button.addEventListener("click", () => {
           if (button.dataset.rsvpAction === "edit") openEditRsvp(button);
           else openRsvp(button);
@@ -350,7 +356,7 @@
 
     function openRsvp(button) {
       rsvpForm.reset();
-      rsvpForm.elements.bookingId.value = button.dataset.bookingId;
+      rsvpForm.elements.bookingReference.value = button.dataset.rsvpReference;
       rsvpForm.elements.adults.value = "1";
       rsvpForm.elements.kids.value = "0";
       document.getElementById("rsvpEvent").textContent = button.dataset.event;
@@ -361,7 +367,7 @@
     function openEditRsvp(button) {
       editRsvpForm.reset();
       resetEditRsvpDialog();
-      editRsvpForm.elements.bookingId.value = button.dataset.bookingId;
+      editRsvpForm.elements.bookingReference.value = button.dataset.rsvpReference;
       document.getElementById("editRsvpEvent").textContent = button.dataset.event;
       editRsvpDialog.showModal();
     }
@@ -380,7 +386,7 @@
       try {
         const data = await postRsvpAction({
           action: "request-edit-code",
-          bookingId: editRsvpForm.elements.bookingId.value,
+          bookingReference: editRsvpForm.elements.bookingReference.value,
           email: emailInput.value
         });
         document.getElementById("editRsvpVerification").hidden = false;
@@ -406,7 +412,7 @@
       try {
         const data = await postRsvpAction({
           action: "verify-edit-code",
-          bookingId: editRsvpForm.elements.bookingId.value,
+          bookingReference: editRsvpForm.elements.bookingReference.value,
           email: editRsvpForm.elements.email.value,
           code: codeInput.value
         });

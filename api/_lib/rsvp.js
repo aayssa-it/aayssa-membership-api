@@ -1,5 +1,6 @@
 import {
   cleanString,
+  getAuthenticatedMember,
   getBaserowBaseUrl,
   getBaserowHeaders
 } from "./aayssa.js";
@@ -8,6 +9,8 @@ const RSVP_TABLE_ID =
   process.env.BASEROW_RSVP_TABLE_ID || "1264849";
 const HOME_POOJA_TABLE_ID =
   process.env.BASEROW_HOME_POOJA_TABLE_ID || "1240702";
+const AAYSSA_EVENT_SUMMARY_EMAIL =
+  "aayssa.official@gmail.com";
 
 const FIELDS = {
   attendeeName: 11608192,
@@ -22,12 +25,14 @@ const FIELDS = {
 
 const HOME_POOJA_FIELDS = {
   entryType: 11317808,
+  family: 11317809,
   requesterName: 11317824,
   email: 11317825,
   poojaDate: 11317827,
   poojaAddress: 11317828,
   preferredTime: 11317829,
-  requestStatus: 11317830
+  requestStatus: 11317830,
+  blockReason: 11317833
 };
 
 const STATUS_OPTIONS = {
@@ -35,6 +40,14 @@ const STATUS_OPTIONS = {
   "Not Attending": 8379708,
   Maybe: 8379709
 };
+
+const DEFAULT_EVENTS = new Map([
+  ["2026-11-14", "Pushpabhishekam preparation"],
+  ["2026-11-15", "Pushpabhishekam"],
+  ["2026-11-21", "Sastha Preethi preparation"],
+  ["2026-11-22", "Sastha Preethi"],
+  ["2026-12-04", "Mandalam Closing"]
+]);
 
 export async function handlePublicRsvp(req, res) {
   if (req.method !== "POST") {
@@ -46,16 +59,18 @@ export async function handlePublicRsvp(req, res) {
 
   try {
     const action = cleanString(req.body?.action) || "submit";
-    const bookingId = positiveInteger(req.body?.bookingId);
+    const bookingReference = normalizeReference(
+      req.body?.bookingReference ?? req.body?.bookingId
+    );
     const email = cleanString(req.body?.email).toLowerCase();
 
-    if (!bookingId || !isValidEmail(email)) {
+    if (!bookingReference || !isValidEmail(email)) {
       return badRequest(res, "A valid email and Home Pooja booking are required.");
     }
 
     if (action === "request-edit-code") {
-      await assertActiveBooking(bookingId);
-      const existing = await findRsvp(bookingId, email);
+      await assertActiveTarget(bookingReference);
+      const existing = await findRsvp(bookingReference, email);
       if (!existing) {
         return res.status(404).json({
           success: false,
@@ -70,7 +85,7 @@ export async function handlePublicRsvp(req, res) {
     }
 
     if (action === "verify-edit-code") {
-      await assertActiveBooking(bookingId);
+      await assertActiveTarget(bookingReference);
       const editToken = await verifyEmailCode(email, req.body?.code);
       if (!editToken) {
         return res.status(401).json({
@@ -78,7 +93,7 @@ export async function handlePublicRsvp(req, res) {
           message: "The verification code is invalid or expired."
         });
       }
-      const existing = await findRsvp(bookingId, email);
+      const existing = await findRsvp(bookingReference, email);
       if (!existing) {
         return res.status(404).json({ success: false, message: "RSVP not found." });
       }
@@ -129,8 +144,8 @@ export async function handlePublicRsvp(req, res) {
       );
     }
 
-    const booking = await assertActiveBooking(bookingId);
-    const existing = await findRsvp(bookingId, email);
+    const booking = await assertActiveTarget(bookingReference);
+    const existing = await findRsvp(bookingReference, email);
 
     if (action === "submit" && existing) {
       return res.status(409).json({
@@ -161,7 +176,7 @@ export async function handlePublicRsvp(req, res) {
       [fieldKey(FIELDS.kids)]: kids,
       [fieldKey(FIELDS.notes)]: notes,
       [fieldKey(FIELDS.status)]: STATUS_OPTIONS[status],
-      [fieldKey(FIELDS.bookingLink)]: String(bookingId)
+      [fieldKey(FIELDS.bookingLink)]: bookingReference
     };
     const rowUrl = action === "update"
       ? `${getBaserowBaseUrl()}/api/database/rows/table/${RSVP_TABLE_ID}/${existing.id}/?user_field_names=false`
@@ -214,6 +229,42 @@ export async function handlePublicRsvp(req, res) {
   }
 }
 
+export async function handleMemberRsvps(req, res) {
+  if (req.method !== "GET") return methodNotAllowed(res);
+  try {
+    const auth = await getAuthenticatedMember(req);
+    if (auth.status !== 200) {
+      return res.status(auth.status).json({ success: false, message: auth.error });
+    }
+    const groups = await buildRsvpGroups({ familyId: Number(auth.memberRow.id) });
+    return res.status(200).json({ success: true, groups });
+  } catch (error) {
+    console.error("Member RSVP view error:", error);
+    return res.status(500).json({ success: false, message: "Unable to load RSVPs." });
+  }
+}
+
+export async function handleAdminRsvps(req, res) {
+  if (req.method !== "GET") return methodNotAllowed(res);
+  try {
+    const auth = await getAuthenticatedMember(req);
+    if (auth.status !== 200) {
+      return res.status(auth.status).json({ success: false, message: auth.error });
+    }
+    if (!hasBoardAccess(auth.memberRow)) {
+      return res.status(403).json({
+        success: false,
+        message: "Board or administrator access required."
+      });
+    }
+    const groups = await buildRsvpGroups({ includeEvents: true });
+    return res.status(200).json({ success: true, groups });
+  } catch (error) {
+    console.error("Admin RSVP view error:", error);
+    return res.status(500).json({ success: false, message: "Unable to load RSVPs." });
+  }
+}
+
 export async function handleRsvpReminders(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ success: false });
@@ -236,7 +287,7 @@ export async function handleRsvpReminders(req, res) {
     const rsvps = allRsvps.filter(rsvp =>
         ["Attending", "Maybe"].includes(rsvp.status) &&
         isValidEmail(rsvp.email) &&
-        rsvp.bookingId
+        rsvp.bookingReference
       );
     const activeBookings = (await fetchAllRows(HOME_POOJA_TABLE_ID))
       .map(mapBookingRow)
@@ -247,15 +298,19 @@ export async function handleRsvpReminders(req, res) {
     const bookings = new Map(
       activeBookings
         .filter(booking => booking.poojaDate === tomorrow)
-        .map(booking => [booking.id, booking])
+        .map(booking => [String(booking.id), booking])
     );
+    const events = await fetchActiveAayssaEvents();
+    for (const event of events.filter(item => item.poojaDate === tomorrow)) {
+      bookings.set(event.reference, event);
+    }
 
-    const due = rsvps.filter(rsvp => bookings.has(rsvp.bookingId));
+    const due = rsvps.filter(rsvp => bookings.has(rsvp.bookingReference));
     const results = await Promise.all(due.map(rsvp =>
       sendRsvpEmailSafely({
         kind: "reminder",
         rsvp,
-        booking: bookings.get(rsvp.bookingId)
+        booking: bookings.get(rsvp.bookingReference)
       })
     ));
     const summaryBookings = activeBookings.filter(booking =>
@@ -264,10 +319,25 @@ export async function handleRsvpReminders(req, res) {
     const summaryResults = await Promise.all(summaryBookings.map(booking => {
       const kind = booking.poojaDate === today ? "final" : "preliminary";
       const bookingRsvps = allRsvps.filter(rsvp =>
-        rsvp.bookingId === booking.id &&
+        rsvp.bookingReference === String(booking.id) &&
         ["Attending", "Maybe"].includes(rsvp.status)
       );
       return sendHostSummarySafely({ kind, booking, rsvps: bookingRsvps });
+    }));
+    const summaryEvents = events.filter(event =>
+      event.poojaDate === preliminaryDate || event.poojaDate === today
+    );
+    const eventSummaryResults = await Promise.all(summaryEvents.map(event => {
+      const kind = event.poojaDate === today ? "final" : "preliminary";
+      const eventRsvps = allRsvps.filter(rsvp =>
+        rsvp.bookingReference === event.reference &&
+        ["Attending", "Maybe"].includes(rsvp.status)
+      );
+      return sendHostSummarySafely({
+        kind,
+        booking: { ...event, email: AAYSSA_EVENT_SUMMARY_EMAIL },
+        rsvps: eventRsvps
+      });
     }));
 
     return res.status(200).json({
@@ -276,7 +346,9 @@ export async function handleRsvpReminders(req, res) {
       due: due.length,
       sent: results.filter(Boolean).length,
       hostSummariesDue: summaryBookings.length,
-      hostSummariesSent: summaryResults.filter(Boolean).length
+      hostSummariesSent: summaryResults.filter(Boolean).length,
+      eventSummariesDue: summaryEvents.length,
+      eventSummariesSent: eventSummaryResults.filter(Boolean).length
     });
   } catch (error) {
     console.error("RSVP reminder error:", error);
@@ -287,9 +359,9 @@ export async function handleRsvpReminders(req, res) {
   }
 }
 
-export async function fetchPublicRsvpSummaries(bookingIds) {
+export async function fetchPublicRsvpSummaries(bookingReferences) {
   const wanted = new Set(
-    bookingIds.map(Number).filter(id => Number.isInteger(id) && id > 0)
+    bookingReferences.map(normalizeReference).filter(Boolean)
   );
   const summaries = new Map();
 
@@ -298,11 +370,11 @@ export async function fetchPublicRsvpSummaries(bookingIds) {
   const rsvps = dedupeRsvps(
     (await fetchAllRows(RSVP_TABLE_ID)).map(mapRsvpRow)
   )
-    .filter(rsvp => wanted.has(rsvp.bookingId));
+    .filter(rsvp => wanted.has(rsvp.bookingReference));
 
   for (const rsvp of rsvps) {
     if (!["Attending", "Maybe"].includes(rsvp.status)) continue;
-    const summary = summaries.get(rsvp.bookingId) || {
+    const summary = summaries.get(rsvp.bookingReference) || {
       attendingResponses: 0,
       attendingGuests: 0,
       maybeResponses: 0,
@@ -317,7 +389,7 @@ export async function fetchPublicRsvpSummaries(bookingIds) {
       summary.maybeResponses += 1;
       summary.maybeGuests += guests;
     }
-    summaries.set(rsvp.bookingId, summary);
+    summaries.set(rsvp.bookingReference, summary);
   }
 
   return summaries;
@@ -349,6 +421,57 @@ async function assertActiveBooking(bookingId) {
   return booking;
 }
 
+async function assertActiveTarget(reference) {
+  if (reference.startsWith("event:")) {
+    const events = await fetchActiveAayssaEvents();
+    const event = events.find(item => item.reference === reference);
+    if (event) return event;
+    const error = new Error("This AAYSSA event is no longer available for RSVP.");
+    error.status = 409;
+    throw error;
+  }
+  return assertActiveBooking(Number(reference));
+}
+
+async function fetchActiveAayssaEvents() {
+  const rows = (await fetchAllRows(HOME_POOJA_TABLE_ID)).map(mapBookingRow);
+  const cancelledDates = new Set(
+    rows.filter(row => row.entryType === "Blocked" && row.status === "Cancelled")
+      .map(row => row.poojaDate)
+  );
+  const events = new Map();
+
+  for (const [date, name] of DEFAULT_EVENTS) {
+    if (!cancelledDates.has(date) && !/preparation/i.test(name)) {
+      events.set(date, makeEvent(date, name));
+    }
+  }
+  for (const row of rows) {
+    if (row.entryType === "Blocked" && row.status === "Blocked") {
+      const name = row.blockReason || "AAYSSA Event";
+      if (!/preparation/i.test(name)) {
+        events.set(row.poojaDate, makeEvent(row.poojaDate, name));
+      }
+    }
+  }
+  return [...events.values()];
+}
+
+function makeEvent(date, name) {
+  return {
+    id: `event:${date}`,
+    reference: `event:${date}`,
+    isAayssaEvent: true,
+    requesterName: name,
+    eventName: name,
+    email: "",
+    poojaDate: date,
+    poojaAddress: "",
+    preferredTime: "",
+    status: "Blocked"
+  };
+}
+
 async function fetchBooking(bookingId) {
   const response = await fetch(
     `${getBaserowBaseUrl()}/api/database/rows/table/${HOME_POOJA_TABLE_ID}/${bookingId}/?user_field_names=false`,
@@ -376,11 +499,57 @@ async function fetchAllRows(tableId) {
   return rows;
 }
 
-async function findRsvp(bookingId, email) {
+async function buildRsvpGroups({ familyId = null, includeEvents = false } = {}) {
+  const rsvps = dedupeRsvps(
+    (await fetchAllRows(RSVP_TABLE_ID)).map(mapRsvpRow)
+  );
+  const bookings = (await fetchAllRows(HOME_POOJA_TABLE_ID))
+    .map(mapBookingRow)
+    .filter(booking =>
+      booking.entryType === "Booking" &&
+      (!familyId || booking.familyIds.includes(familyId))
+    );
+  const targets = new Map(
+    bookings.map(booking => [String(booking.id), booking])
+  );
+
+  if (includeEvents) {
+    for (const event of await fetchActiveAayssaEvents()) {
+      targets.set(event.reference, event);
+    }
+  }
+
+  return [...targets.entries()]
+    .map(([reference, target]) => {
+      const responses = rsvps
+        .filter(rsvp => rsvp.bookingReference === reference)
+        .sort((a, b) => a.attendeeName.localeCompare(b.attendeeName));
+      return {
+        reference,
+        type: target.isAayssaEvent ? "AAYSSA Event" : "Home Pooja",
+        name: target.isAayssaEvent ? target.eventName : target.requesterName,
+        date: target.poojaDate,
+        time: target.preferredTime,
+        address: target.poojaAddress,
+        summary: summarizeAllRsvps(responses),
+        responses: responses.map(publicRsvp)
+      };
+    })
+    .filter(group => group.responses.length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function summarizeAllRsvps(rsvps) {
+  const attending = summarizeRsvps(rsvps, "Attending");
+  const maybe = summarizeRsvps(rsvps, "Maybe");
+  return { attending, maybe, totalResponses: rsvps.length };
+}
+
+async function findRsvp(bookingReference, email) {
   const matches = (await fetchAllRows(RSVP_TABLE_ID))
     .map(mapRsvpRow)
     .filter(rsvp =>
-      rsvp.bookingId === bookingId &&
+      rsvp.bookingReference === bookingReference &&
       rsvp.email === email
     )
     .sort((a, b) => b.id - a.id);
@@ -390,8 +559,8 @@ async function findRsvp(bookingId, email) {
 function dedupeRsvps(rsvps) {
   const newest = new Map();
   for (const rsvp of [...rsvps].sort((a, b) => b.id - a.id)) {
-    const key = `${rsvp.bookingId}:${rsvp.email}`;
-    if (rsvp.bookingId && rsvp.email && !newest.has(key)) {
+    const key = `${rsvp.bookingReference}:${rsvp.email}`;
+    if (rsvp.bookingReference && rsvp.email && !newest.has(key)) {
       newest.set(key, rsvp);
     }
   }
@@ -414,13 +583,20 @@ function mapBookingRow(row) {
   return {
     id: Number(row.id),
     entryType: selectValue(row[fieldKey(HOME_POOJA_FIELDS.entryType)]),
+    familyIds: linkRowIds(row[fieldKey(HOME_POOJA_FIELDS.family)]),
     requesterName: cleanString(row[fieldKey(HOME_POOJA_FIELDS.requesterName)]),
     email: cleanString(row[fieldKey(HOME_POOJA_FIELDS.email)]).toLowerCase(),
     poojaDate: cleanString(row[fieldKey(HOME_POOJA_FIELDS.poojaDate)]),
     poojaAddress: cleanString(row[fieldKey(HOME_POOJA_FIELDS.poojaAddress)]),
     preferredTime: cleanString(row[fieldKey(HOME_POOJA_FIELDS.preferredTime)]),
-    status: selectValue(row[fieldKey(HOME_POOJA_FIELDS.requestStatus)])
+    status: selectValue(row[fieldKey(HOME_POOJA_FIELDS.requestStatus)]),
+    blockReason: cleanString(row[fieldKey(HOME_POOJA_FIELDS.blockReason)])
   };
+}
+
+function linkRowIds(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map(item => Number(item?.id ?? item)).filter(Number.isInteger);
 }
 
 function mapRsvpRow(row) {
@@ -433,7 +609,7 @@ function mapRsvpRow(row) {
     kids: Number(row[fieldKey(FIELDS.kids)]) || 0,
     notes: cleanString(row[fieldKey(FIELDS.notes)]),
     status: selectValue(row[fieldKey(FIELDS.status)]),
-    bookingId: positiveInteger(row[fieldKey(FIELDS.bookingLink)])
+    bookingReference: normalizeReference(row[fieldKey(FIELDS.bookingLink)])
   };
 }
 
@@ -455,17 +631,19 @@ async function sendRsvpEmail({ kind, rsvp, booking }) {
 
   const reminder = kind === "reminder";
   const update = kind === "update";
+  const event = Boolean(booking.isAayssaEvent);
+  const subjectType = event ? "AAYSSA Event" : "Home Pooja";
   const date = formatEmailDate(booking.poojaDate);
   const title = reminder
-    ? "Home Pooja Reminder"
+    ? `${subjectType} Reminder`
     : update
-      ? "Home Pooja RSVP Updated"
-      : "Home Pooja RSVP Received";
+      ? `${subjectType} RSVP Updated`
+      : `${subjectType} RSVP Received`;
   const intro = reminder
-    ? "This is a reminder that the Home Pooja you RSVP’d to is tomorrow."
+    ? `This is a reminder that the ${subjectType} you RSVP’d to is tomorrow.`
     : update
-      ? "Your Home Pooja RSVP has been updated."
-      : "Your Home Pooja RSVP has been received.";
+      ? `Your ${subjectType} RSVP has been updated.`
+      : `Your ${subjectType} RSVP has been received.`;
   const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -485,9 +663,10 @@ async function sendRsvpEmail({ kind, rsvp, booking }) {
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [
         `Namaskaram ${rsvp.attendeeName},`, "", intro,
-        `Host: ${booking.requesterName}`, `Date: ${date}`,
-        `Time: ${booking.preferredTime || "To be confirmed"}`,
-        `Address: ${booking.poojaAddress}`, `RSVP: ${rsvp.status}`,
+        `${event ? "Event" : "Host"}: ${booking.requesterName}`, `Date: ${date}`,
+        booking.preferredTime ? `Time: ${booking.preferredTime}` : "",
+        booking.poojaAddress ? `Address: ${booking.poojaAddress}` : "",
+        `RSVP: ${rsvp.status}`,
         `Adults: ${rsvp.adults}`, `Kids: ${rsvp.kids}`,
         rsvp.notes ? `Notes: ${rsvp.notes}` : "", "",
         "Atlanta Ayyappa Seva Sangam"
@@ -497,10 +676,10 @@ async function sendRsvpEmail({ kind, rsvp, booking }) {
           <h2 style="color:#8a3f12">${escapeHtml(title)}</h2>
           <p>Namaskaram ${escapeHtml(rsvp.attendeeName)},</p>
           <p>${escapeHtml(intro)}</p>
-          <p><strong>Host:</strong> ${escapeHtml(booking.requesterName)}<br>
+          <p><strong>${event ? "Event" : "Host"}:</strong> ${escapeHtml(booking.requesterName)}<br>
           <strong>Date:</strong> ${escapeHtml(date)}<br>
-          <strong>Time:</strong> ${escapeHtml(booking.preferredTime || "To be confirmed")}<br>
-          <strong>Address:</strong> ${escapeHtml(booking.poojaAddress)}<br>
+          ${booking.preferredTime ? `<strong>Time:</strong> ${escapeHtml(booking.preferredTime)}<br>` : ""}
+          ${booking.poojaAddress ? `<strong>Address:</strong> ${escapeHtml(booking.poojaAddress)}<br>` : ""}
           <strong>RSVP:</strong> ${escapeHtml(rsvp.status)}<br>
           <strong>Adults:</strong> ${rsvp.adults}<br>
           <strong>Kids:</strong> ${rsvp.kids}</p>
@@ -538,6 +717,8 @@ async function sendHostSummary({ kind, booking, rsvps }) {
   const maybe = summarizeRsvps(rsvps, "Maybe");
   const final = kind === "final";
   const label = final ? "Final RSVP Summary" : "Preliminary RSVP Summary";
+  const event = Boolean(booking.isAayssaEvent);
+  const subjectType = event ? booking.eventName : "Home Pooja";
   const date = formatEmailDate(booking.poojaDate);
   const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
   const attendeeLines = rsvps.length
@@ -566,11 +747,12 @@ async function sendHostSummary({ kind, booking, rsvps }) {
     body: JSON.stringify({
       from,
       to: [booking.email],
-      subject: `AAYSSA Home Pooja ${label} — ${date}`,
+      ...(!event ? { cc: [AAYSSA_EVENT_SUMMARY_EMAIL] } : {}),
+      subject: `AAYSSA ${subjectType} ${label} — ${date}`,
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [
-        `Namaskaram ${booking.requesterName},`, "",
-        `Here is your ${label.toLowerCase()} for the Home Pooja on ${date}.`,
+        event ? "Namaskaram AAYSSA Team," : `Namaskaram ${booking.requesterName},`, "",
+        `Here is the ${label.toLowerCase()} for ${event ? booking.eventName : "the Home Pooja"} on ${date}.`,
         `Attending: ${attending.households} response(s), ${attending.adults} adult(s), ${attending.kids} kid(s)`,
         `Maybe: ${maybe.households} response(s), ${maybe.adults} adult(s), ${maybe.kids} kid(s)`,
         "", "RSVP details:", ...attendeeLines, "",
@@ -579,9 +761,9 @@ async function sendHostSummary({ kind, booking, rsvps }) {
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;color:#2c211a;line-height:1.6;max-width:720px;margin:auto">
-          <h2 style="color:#8a3f12">Home Pooja ${escapeHtml(label)}</h2>
-          <p>Namaskaram ${escapeHtml(booking.requesterName)},</p>
-          <p>Here is your ${escapeHtml(label.toLowerCase())} for the Home Pooja on <strong>${escapeHtml(date)}</strong>.</p>
+          <h2 style="color:#8a3f12">${escapeHtml(subjectType)} ${escapeHtml(label)}</h2>
+          <p>${event ? "Namaskaram AAYSSA Team," : `Namaskaram ${escapeHtml(booking.requesterName)},`}</p>
+          <p>Here is the ${escapeHtml(label.toLowerCase())} for ${event ? escapeHtml(booking.eventName) : "the Home Pooja"} on <strong>${escapeHtml(date)}</strong>.</p>
           <p><strong>Attending:</strong> ${attending.households} response(s), ${attending.adults} adult(s), ${attending.kids} kid(s)<br>
           <strong>Maybe:</strong> ${maybe.households} response(s), ${maybe.adults} adult(s), ${maybe.kids} kid(s)</p>
           <table style="border-collapse:collapse;width:100%;margin:20px 0">
@@ -699,6 +881,13 @@ function positiveInteger(value) {
   return Number.isInteger(number) && number > 0 ? number : null;
 }
 
+function normalizeReference(value) {
+  const reference = cleanString(value);
+  if (/^[1-9]\d*$/.test(reference)) return reference;
+  if (/^event:\d{4}-\d{2}-\d{2}$/.test(reference)) return reference;
+  return "";
+}
+
 function nonNegativeInteger(value) {
   const number = Number(value);
   return Number.isInteger(number) && number >= 0 ? number : null;
@@ -714,4 +903,15 @@ function fieldKey(id) {
 
 function badRequest(res, message) {
   return res.status(400).json({ success: false, message });
+}
+
+function methodNotAllowed(res) {
+  return res.status(405).json({ success: false, message: "Method not allowed." });
+}
+
+function hasBoardAccess(memberRow) {
+  const role = memberRow?.field_10493689;
+  const id = Number(role?.id ?? role);
+  const name = cleanString(role?.value).toLowerCase();
+  return id === 7473605 || id === 7473606 || name === "board" || name === "admin";
 }

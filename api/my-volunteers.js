@@ -12,6 +12,9 @@ import {
 import {
   handleMemberHomePooja
 } from "./_lib/home-pooja.js";
+import {
+  handleMemberRsvps
+} from "./_lib/rsvp.js";
 
 export default async function handler(req, res) {
   if (req.query?.resource === "maaladharan") {
@@ -20,6 +23,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "home-pooja") {
     return handleMemberHomePooja(req, res);
+  }
+
+  if (req.query?.resource === "rsvp") {
+    return handleMemberRsvps(req, res);
   }
 
   if (req.method !== "GET") {

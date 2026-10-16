@@ -872,6 +872,12 @@ async function buildPublicCalendar(
         defaultReason ||
         current?.reason ||
         "",
+      ...(isBlocked && !/preparation/i.test(defaultReason || current?.reason || "")
+        ? {
+            eventReference: `event:${date}`,
+            eventName: defaultReason || current?.reason || "AAYSSA Event"
+          }
+        : {}),
       ...(includeBookingDetails &&
       current?.status === "Booked"
         ? {
@@ -891,13 +897,21 @@ async function buildPublicCalendar(
   if (includeBookingDetails) {
     try {
       const bookingIds = dates
-        .map(item => item.bookingId)
+        .map(item => item.bookingId || item.eventReference)
         .filter(Boolean);
       const summaries = await fetchPublicRsvpSummaries(bookingIds);
 
       for (const item of dates) {
         if (item.bookingId) {
-          item.rsvpSummary = summaries.get(item.bookingId) || {
+          item.rsvpSummary = summaries.get(String(item.bookingId)) || {
+            attendingResponses: 0,
+            attendingGuests: 0,
+            maybeResponses: 0,
+            maybeGuests: 0
+          };
+        }
+        if (item.eventReference) {
+          item.rsvpSummary = summaries.get(item.eventReference) || {
             attendingResponses: 0,
             attendingGuests: 0,
             maybeResponses: 0,

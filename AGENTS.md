@@ -168,7 +168,7 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Returns 404 unless `HOME_POOJA_PUBLIC_ENABLED=true`.
 
 - `POST /api/register?resource=rsvp`
-  - Public RSVP submission for an active Home Pooja booking.
+  - Public RSVP submission for an active Home Pooja booking or AAYSSA event.
   - Validates that the referenced booking row is still active, then stores the attendee response in `AAYSSA_RSVP` (table `1264849` by default).
   - Sends a best-effort Resend confirmation to the attendee after the RSVP is saved.
   - Supports email-code verified editing through `request-edit-code`, `verify-edit-code`, and `update` actions. The verified Supabase access token authorizes the update, so no additional Baserow fields are required.
@@ -177,7 +177,14 @@ The old Supabase magic-link callback route was removed after switching to passco
 - `GET /api/admin-stats?resource=rsvp-reminders`
   - `CRON_SECRET`-protected daily Vercel cron endpoint.
   - Sends a reminder to Attending and Maybe RSVP responses one day before the linked active Home Pooja booking. Resend idempotency keys prevent duplicate reminder delivery when the cron retries.
-  - Sends each host a preliminary attendee summary two calendar days before the pooja and a final summary on the morning of the pooja. Summaries separate Attending and Maybe household/adult/kid totals and include attendee names and notes.
+  - Sends each host a preliminary attendee summary two calendar days before the pooja and a final summary on the morning of the pooja, with `aayssa.official@gmail.com` copied. Summaries separate Attending and Maybe household/adult/kid totals and include attendee names and notes.
+  - Sends equivalent preliminary and final AAYSSA event summaries to `aayssa.official@gmail.com`.
+
+- `GET /api/my-volunteers?resource=rsvp`
+  - Authenticated member endpoint returning RSVP identities and contact details only for Home Pooja bookings linked to that member's family.
+
+- `GET /api/admin-members?resource=rsvp`
+  - Board/Admin-only view of all current Home Pooja and AAYSSA event RSVP groups, summaries, identities, contact details, and notes.
 
 - `POST /api/login`
   - Starts Supabase email OTP/passcode login.
@@ -368,7 +375,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts for booked dates; phone numbers, email addresses, and RSVP identities remain private. Each booked date has separate New RSVP and Edit RSVP buttons and dialogs; editing requires email-code verification.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates have separate New RSVP and Edit RSVP buttons and dialogs; editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
 
 ## Public Maaladharan Registration Embed
 

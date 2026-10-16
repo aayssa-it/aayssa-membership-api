@@ -2471,14 +2471,21 @@
 
   async function loadHomePoojaBookings() {
     try {
-      const response =
-        await fetch(
+      const [response, rsvpResponse] = await Promise.all([
+        fetch(
           "/api/my-volunteers?resource=home-pooja",
           { credentials: "include" }
-        );
+        ),
+        fetch(
+          "/api/my-volunteers?resource=rsvp",
+          { credentials: "include" }
+        )
+      ]);
 
-      const data =
-        await response.json();
+      const [data, rsvpData] = await Promise.all([
+        response.json(),
+        rsvpResponse.json()
+      ]);
 
       if (!response.ok || !data.success) {
         throw new Error(
@@ -2486,6 +2493,10 @@
           "Unable to load Home Pooja bookings."
         );
       }
+
+      data.rsvpGroups = rsvpResponse.ok && rsvpData.success
+        ? rsvpData.groups
+        : [];
 
       return data;
     } catch (error) {
@@ -2515,6 +2526,9 @@
       dates.filter(item =>
         item.status === "Available"
       );
+    const rsvpGroups = Array.isArray(data?.rsvpGroups)
+      ? data.rsvpGroups
+      : [];
 
     return `
       <section
@@ -2577,6 +2591,13 @@
               : "<span>No Home Pooja bookings yet.</span>"
           }
         </div>
+
+        <details class="home-pooja-admin-dropdown">
+          <summary>Your Home Pooja RSVPs (${rsvpGroups.reduce((total, group) => total + group.responses.length, 0)})</summary>
+          <div class="home-pooja-admin-dropdown-content">
+            ${renderRsvpGroups(rsvpGroups, "No RSVPs have been submitted for your Home Pooja bookings.")}
+          </div>
+        </details>
 
         <form id="homePoojaMemberForm" class="maaladharan-form">
           <div class="form-field">
@@ -2805,6 +2826,45 @@
         </div>
       </div>
     `;
+  }
+
+  function renderRsvpGroups(groups, emptyMessage = "No RSVPs have been submitted.") {
+    if (!Array.isArray(groups) || !groups.length) {
+      return `<p>${escapeHtml(emptyMessage)}</p>`;
+    }
+
+    return groups.map(group => `
+      <div class="maaladharan-registration">
+        <strong>${escapeHtml(group.type)} · ${escapeHtml(formatPortalDate(group.date))}</strong>
+        <span>${escapeHtml(group.name || "")}${group.time ? ` · ${escapeHtml(group.time)}` : ""}</span>
+        <span>
+          Attending: ${Number(group.summary?.attending?.households) || 0} responses,
+          ${Number(group.summary?.attending?.adults) || 0} adults,
+          ${Number(group.summary?.attending?.kids) || 0} kids ·
+          Maybe: ${Number(group.summary?.maybe?.households) || 0} responses,
+          ${Number(group.summary?.maybe?.adults) || 0} adults,
+          ${Number(group.summary?.maybe?.kids) || 0} kids
+        </span>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Status</th><th>Adults</th><th>Kids</th><th>Email</th><th>Phone</th><th>Notes</th></tr></thead>
+            <tbody>
+              ${group.responses.map(rsvp => `
+                <tr>
+                  <td>${escapeHtml(rsvp.attendeeName)}</td>
+                  <td>${escapeHtml(rsvp.status)}</td>
+                  <td>${Number(rsvp.adults) || 0}</td>
+                  <td>${Number(rsvp.kids) || 0}</td>
+                  <td>${escapeHtml(rsvp.email)}</td>
+                  <td>${escapeHtml(rsvp.phone)}</td>
+                  <td>${escapeHtml(rsvp.notes)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `).join("");
   }
 
 
@@ -5229,14 +5289,21 @@
     }
 
     try {
-      const response =
-        await fetch(
+      const [response, rsvpResponse] = await Promise.all([
+        fetch(
           "/api/admin-members?resource=home-pooja",
           { credentials: "include" }
-        );
+        ),
+        fetch(
+          "/api/admin-members?resource=rsvp",
+          { credentials: "include" }
+        )
+      ]);
 
-      const data =
-        await response.json();
+      const [data, rsvpData] = await Promise.all([
+        response.json(),
+        rsvpResponse.json()
+      ]);
 
       if (!response.ok || !data.success) {
         throw new Error(
@@ -5264,6 +5331,9 @@
         calendarDates.filter(item =>
           item.status === "Blocked"
         );
+      const rsvpGroups = rsvpResponse.ok && rsvpData.success && Array.isArray(rsvpData.groups)
+        ? rsvpData.groups
+        : [];
 
       container.innerHTML = `
         <h4>Booking Calendar</h4>
@@ -5345,6 +5415,15 @@
             </button>
           </div>
         </form>
+
+        <details class="home-pooja-admin-dropdown">
+          <summary>
+            RSVP Responses (${rsvpGroups.reduce((total, group) => total + group.responses.length, 0)})
+          </summary>
+          <div class="home-pooja-admin-dropdown-content">
+            ${renderRsvpGroups(rsvpGroups)}
+          </div>
+        </details>
 
         <details class="home-pooja-admin-dropdown">
           <summary>

@@ -2,6 +2,9 @@ import {
   handleAdminHomePooja
 } from "./_lib/home-pooja.js";
 import {
+  handleAdminRsvps
+} from "./_lib/rsvp.js";
+import {
   VOLUNTEER_FIELDS,
   VOLUNTEERS_TABLE_ID,
   mapVolunteerRow
@@ -15,6 +18,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "home-pooja") {
     return handleAdminHomePooja(req, res);
+  }
+
+  if (req.query?.resource === "rsvp") {
+    return handleAdminRsvps(req, res);
   }
 
   if (req.method !== "GET") {
