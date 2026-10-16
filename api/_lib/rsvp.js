@@ -45,9 +45,55 @@ export async function handlePublicRsvp(req, res) {
   }
 
   try {
+    const action = cleanString(req.body?.action) || "submit";
     const bookingId = positiveInteger(req.body?.bookingId);
-    const attendeeName = cleanString(req.body?.attendeeName);
     const email = cleanString(req.body?.email).toLowerCase();
+
+    if (!bookingId || !isValidEmail(email)) {
+      return badRequest(res, "A valid email and Home Pooja booking are required.");
+    }
+
+    if (action === "request-edit-code") {
+      await assertActiveBooking(bookingId);
+      const existing = await findRsvp(bookingId, email);
+      if (!existing) {
+        return res.status(404).json({
+          success: false,
+          message: "No RSVP was found for this email and Home Pooja."
+        });
+      }
+      await sendVerificationCode(email);
+      return res.status(200).json({
+        success: true,
+        message: "A verification code has been sent to your email."
+      });
+    }
+
+    if (action === "verify-edit-code") {
+      await assertActiveBooking(bookingId);
+      const editToken = await verifyEmailCode(email, req.body?.code);
+      if (!editToken) {
+        return res.status(401).json({
+          success: false,
+          message: "The verification code is invalid or expired."
+        });
+      }
+      const existing = await findRsvp(bookingId, email);
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "RSVP not found." });
+      }
+      return res.status(200).json({
+        success: true,
+        editToken,
+        rsvp: publicRsvp(existing)
+      });
+    }
+
+    if (!["submit", "update"].includes(action)) {
+      return badRequest(res, "Select a valid RSVP action.");
+    }
+
+    const attendeeName = cleanString(req.body?.attendeeName);
     const phone = cleanString(req.body?.phone);
     const adults = nonNegativeInteger(req.body?.adults);
     const kids = nonNegativeInteger(req.body?.kids);
@@ -61,10 +107,10 @@ export async function handlePublicRsvp(req, res) {
       });
     }
 
-    if (!bookingId || !attendeeName || !isValidEmail(email)) {
+    if (!attendeeName) {
       return badRequest(
         res,
-        "Attendee name, a valid email, and a Home Pooja booking are required."
+        "Attendee name is required."
       );
     }
 
@@ -84,33 +130,60 @@ export async function handlePublicRsvp(req, res) {
     }
 
     const booking = await assertActiveBooking(bookingId);
+    const existing = await findRsvp(bookingId, email);
+
+    if (action === "submit" && existing) {
+      return res.status(409).json({
+        success: false,
+        code: "RSVP_EXISTS",
+        message: "An RSVP already exists for this email. Select Edit RSVP to update it."
+      });
+    }
+
+    if (action === "update") {
+      if (!existing) {
+        return res.status(404).json({ success: false, message: "RSVP not found." });
+      }
+      const verifiedEmail = await authenticatedEmail(req.body?.editToken);
+      if (verifiedEmail !== email) {
+        return res.status(401).json({
+          success: false,
+          message: "Your edit session is invalid or expired. Request a new code."
+        });
+      }
+    }
+
+    const payload = {
+      [fieldKey(FIELDS.attendeeName)]: attendeeName,
+      [fieldKey(FIELDS.email)]: email,
+      [fieldKey(FIELDS.phone)]: phone,
+      [fieldKey(FIELDS.adults)]: adults,
+      [fieldKey(FIELDS.kids)]: kids,
+      [fieldKey(FIELDS.notes)]: notes,
+      [fieldKey(FIELDS.status)]: STATUS_OPTIONS[status],
+      [fieldKey(FIELDS.bookingLink)]: String(bookingId)
+    };
+    const rowUrl = action === "update"
+      ? `${getBaserowBaseUrl()}/api/database/rows/table/${RSVP_TABLE_ID}/${existing.id}/?user_field_names=false`
+      : `${getBaserowBaseUrl()}/api/database/rows/table/${RSVP_TABLE_ID}/?user_field_names=false`;
 
     const response = await fetch(
-      `${getBaserowBaseUrl()}/api/database/rows/table/${RSVP_TABLE_ID}/?user_field_names=false`,
+      rowUrl,
       {
-        method: "POST",
+        method: action === "update" ? "PATCH" : "POST",
         headers: getBaserowHeaders(),
-        body: JSON.stringify({
-          [fieldKey(FIELDS.attendeeName)]: attendeeName,
-          [fieldKey(FIELDS.email)]: email,
-          [fieldKey(FIELDS.phone)]: phone,
-          [fieldKey(FIELDS.adults)]: adults,
-          [fieldKey(FIELDS.kids)]: kids,
-          [fieldKey(FIELDS.notes)]: notes,
-          [fieldKey(FIELDS.status)]: STATUS_OPTIONS[status],
-          [fieldKey(FIELDS.bookingLink)]: String(bookingId)
-        })
+        body: JSON.stringify(payload)
       }
     );
 
     if (!response.ok) {
-      console.error("RSVP creation failed:", response.status, await response.text());
+      console.error("RSVP save failed:", response.status, await response.text());
       throw new Error("Unable to save your RSVP.");
     }
 
     const savedRsvp = await response.json();
     const confirmationEmailSent = await sendRsvpEmailSafely({
-      kind: "confirmation",
+      kind: action === "update" ? "update" : "confirmation",
       rsvp: {
         id: savedRsvp.id,
         attendeeName,
@@ -123,11 +196,11 @@ export async function handlePublicRsvp(req, res) {
       booking
     });
 
-    return res.status(201).json({
+    return res.status(action === "update" ? 200 : 201).json({
       success: true,
       message: confirmationEmailSent
-        ? "Your RSVP has been received. A confirmation email has been sent."
-        : "Your RSVP has been received.",
+        ? `Your RSVP has been ${action === "update" ? "updated" : "received"}. A confirmation email has been sent.`
+        : `Your RSVP has been ${action === "update" ? "updated" : "received"}.`,
       confirmationEmailSent
     });
   } catch (error) {
@@ -157,8 +230,9 @@ export async function handleRsvpReminders(req, res) {
     const today = easternDateWithOffset(0);
     const tomorrow = easternDateWithOffset(1);
     const preliminaryDate = easternDateWithOffset(2);
-    const allRsvps = (await fetchAllRows(RSVP_TABLE_ID))
-      .map(mapRsvpRow);
+    const allRsvps = dedupeRsvps(
+      (await fetchAllRows(RSVP_TABLE_ID)).map(mapRsvpRow)
+    );
     const rsvps = allRsvps.filter(rsvp =>
         ["Attending", "Maybe"].includes(rsvp.status) &&
         isValidEmail(rsvp.email) &&
@@ -221,8 +295,9 @@ export async function fetchPublicRsvpSummaries(bookingIds) {
 
   if (!wanted.size) return summaries;
 
-  const rsvps = (await fetchAllRows(RSVP_TABLE_ID))
-    .map(mapRsvpRow)
+  const rsvps = dedupeRsvps(
+    (await fetchAllRows(RSVP_TABLE_ID)).map(mapRsvpRow)
+  )
     .filter(rsvp => wanted.has(rsvp.bookingId));
 
   for (const rsvp of rsvps) {
@@ -301,6 +376,40 @@ async function fetchAllRows(tableId) {
   return rows;
 }
 
+async function findRsvp(bookingId, email) {
+  const matches = (await fetchAllRows(RSVP_TABLE_ID))
+    .map(mapRsvpRow)
+    .filter(rsvp =>
+      rsvp.bookingId === bookingId &&
+      rsvp.email === email
+    )
+    .sort((a, b) => b.id - a.id);
+  return matches[0] || null;
+}
+
+function dedupeRsvps(rsvps) {
+  const newest = new Map();
+  for (const rsvp of [...rsvps].sort((a, b) => b.id - a.id)) {
+    const key = `${rsvp.bookingId}:${rsvp.email}`;
+    if (rsvp.bookingId && rsvp.email && !newest.has(key)) {
+      newest.set(key, rsvp);
+    }
+  }
+  return [...newest.values()];
+}
+
+function publicRsvp(rsvp) {
+  return {
+    attendeeName: rsvp.attendeeName,
+    email: rsvp.email,
+    phone: rsvp.phone,
+    adults: rsvp.adults,
+    kids: rsvp.kids,
+    notes: rsvp.notes,
+    status: rsvp.status
+  };
+}
+
 function mapBookingRow(row) {
   return {
     id: Number(row.id),
@@ -319,6 +428,7 @@ function mapRsvpRow(row) {
     id: Number(row.id),
     attendeeName: cleanString(row[fieldKey(FIELDS.attendeeName)]),
     email: cleanString(row[fieldKey(FIELDS.email)]).toLowerCase(),
+    phone: cleanString(row[fieldKey(FIELDS.phone)]),
     adults: Number(row[fieldKey(FIELDS.adults)]) || 0,
     kids: Number(row[fieldKey(FIELDS.kids)]) || 0,
     notes: cleanString(row[fieldKey(FIELDS.notes)]),
@@ -344,11 +454,18 @@ async function sendRsvpEmail({ kind, rsvp, booking }) {
   if (!apiKey || !from) throw new Error("Resend RSVP email is not configured.");
 
   const reminder = kind === "reminder";
+  const update = kind === "update";
   const date = formatEmailDate(booking.poojaDate);
-  const title = reminder ? "Home Pooja Reminder" : "Home Pooja RSVP Received";
+  const title = reminder
+    ? "Home Pooja Reminder"
+    : update
+      ? "Home Pooja RSVP Updated"
+      : "Home Pooja RSVP Received";
   const intro = reminder
     ? "This is a reminder that the Home Pooja you RSVP’d to is tomorrow."
-    : "Your Home Pooja RSVP has been received.";
+    : update
+      ? "Your Home Pooja RSVP has been updated."
+      : "Your Home Pooja RSVP has been received.";
   const replyTo = process.env.RESEND_REPLY_TO_EMAIL;
   const headers = {
     Authorization: `Bearer ${apiKey}`,
@@ -507,6 +624,65 @@ function formatEmailDate(value) {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC"
   }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+async function sendVerificationCode(email) {
+  const response = await fetch(`${requiredSupabaseUrl()}/auth/v1/otp`, {
+    method: "POST",
+    headers: supabaseHeaders(),
+    body: JSON.stringify({ email, create_user: true })
+  });
+  if (!response.ok) throw new Error("Unable to send the verification code.");
+}
+
+async function verifyEmailCode(email, code) {
+  const token = cleanString(code).replace(/\D/g, "");
+  if (!token) return "";
+  const response = await fetch(`${requiredSupabaseUrl()}/auth/v1/verify`, {
+    method: "POST",
+    headers: supabaseHeaders(),
+    body: JSON.stringify({ email, token, type: "email" })
+  });
+  if (!response.ok) return "";
+  const data = await response.json();
+  return cleanString(data?.user?.email).toLowerCase() === email
+    ? cleanString(data.access_token)
+    : "";
+}
+
+async function authenticatedEmail(accessToken) {
+  const token = cleanString(accessToken);
+  if (!token) return "";
+  const response = await fetch(`${requiredSupabaseUrl()}/auth/v1/user`, {
+    headers: {
+      apikey: requiredSupabaseKey(),
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) return "";
+  const user = await response.json();
+  return cleanString(user?.email).toLowerCase();
+}
+
+function requiredSupabaseUrl() {
+  const value = cleanString(process.env.SUPABASE_URL).replace(/\/$/, "");
+  if (!value) throw new Error("Email verification is unavailable.");
+  return value;
+}
+
+function requiredSupabaseKey() {
+  const value = cleanString(process.env.SUPABASE_PUBLISHABLE_KEY);
+  if (!value) throw new Error("Email verification is unavailable.");
+  return value;
+}
+
+function supabaseHeaders() {
+  const key = requiredSupabaseKey();
+  return {
+    "Content-Type": "application/json",
+    apikey: key,
+    Authorization: `Bearer ${key}`
+  };
 }
 
 function escapeHtml(value) {

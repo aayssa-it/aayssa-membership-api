@@ -171,6 +171,8 @@ The old Supabase magic-link callback route was removed after switching to passco
   - Public RSVP submission for an active Home Pooja booking.
   - Validates that the referenced booking row is still active, then stores the attendee response in `AAYSSA_RSVP` (table `1264849` by default).
   - Sends a best-effort Resend confirmation to the attendee after the RSVP is saved.
+  - Supports email-code verified editing through `request-edit-code`, `verify-edit-code`, and `update` actions. The verified Supabase access token authorizes the update, so no additional Baserow fields are required.
+  - Prevents a new duplicate for the same booking and email. Aggregate counts, reminders, and host summaries also keep only the newest existing response for each booking/email pair.
 
 - `GET /api/admin-stats?resource=rsvp-reminders`
   - `CRON_SECRET`-protected daily Vercel cron endpoint.
@@ -366,7 +368,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts for booked dates; phone numbers, email addresses, and RSVP identities remain private. Each booked date has an RSVP form for Attending, Maybe, or Not Attending responses.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts for booked dates; phone numbers, email addresses, and RSVP identities remain private. Each booked date has an RSVP form for Attending, Maybe, or Not Attending responses, plus an email-code verified Edit Existing RSVP flow.
 
 ## Public Maaladharan Registration Embed
 

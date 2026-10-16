@@ -184,8 +184,17 @@
         <label class="full">Notes<textarea name="notes" maxlength="2000"></textarea></label>
       </div>
       <div id="rsvpMessage" class="form-message" role="status"></div>
+      <div id="rsvpVerification" class="form-grid" hidden>
+        <label class="full">Email Verification Code *
+          <input name="verificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8">
+        </label>
+        <div class="form-actions full">
+          <button type="button" id="verifyRsvp">Verify and Load RSVP</button>
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" id="cancelRsvp">Cancel</button>
+        <button type="button" id="editRsvp">Edit Existing RSVP</button>
         <button type="submit" id="submitRsvp">Submit RSVP</button>
       </div>
     </form>
@@ -197,6 +206,7 @@
     let dates = [];
     let monthKeys = [];
     let currentMonthIndex = 0;
+    let rsvpEditToken = "";
 
     loadCalendar();
 
@@ -301,6 +311,7 @@
 
     function openRsvp(button) {
       rsvpForm.reset();
+      resetRsvpEditMode();
       rsvpForm.elements.bookingId.value = button.dataset.bookingId;
       rsvpForm.elements.adults.value = "1";
       rsvpForm.elements.kids.value = "0";
@@ -311,11 +322,79 @@
 
     document.getElementById("cancelRsvp").addEventListener("click", () => rsvpDialog.close());
 
+    document.getElementById("editRsvp").addEventListener("click", async () => {
+      const emailInput = rsvpForm.elements.email;
+      if (!emailInput.reportValidity()) return;
+      const button = document.getElementById("editRsvp");
+      const message = document.getElementById("rsvpMessage");
+      button.disabled = true;
+      message.className = "form-message";
+      message.textContent = "Sending verification code…";
+      try {
+        const data = await postRsvpAction({
+          action: "request-edit-code",
+          bookingId: rsvpForm.elements.bookingId.value,
+          email: emailInput.value
+        });
+        document.getElementById("rsvpVerification").hidden = false;
+        document.getElementById("submitRsvp").hidden = true;
+        rsvpForm.elements.verificationCode.required = true;
+        rsvpForm.elements.verificationCode.focus();
+        message.textContent = data.message;
+      } catch (error) {
+        message.className = "form-message error";
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById("verifyRsvp").addEventListener("click", async () => {
+      const codeInput = rsvpForm.elements.verificationCode;
+      if (!codeInput.reportValidity()) return;
+      const button = document.getElementById("verifyRsvp");
+      const message = document.getElementById("rsvpMessage");
+      button.disabled = true;
+      message.className = "form-message";
+      message.textContent = "Verifying…";
+      try {
+        const data = await postRsvpAction({
+          action: "verify-edit-code",
+          bookingId: rsvpForm.elements.bookingId.value,
+          email: rsvpForm.elements.email.value,
+          code: codeInput.value
+        });
+        const existing = data.rsvp;
+        rsvpEditToken = data.editToken;
+        rsvpForm.elements.attendeeName.value = existing.attendeeName || "";
+        rsvpForm.elements.email.value = existing.email || "";
+        rsvpForm.elements.email.readOnly = true;
+        rsvpForm.elements.phone.value = existing.phone || "";
+        rsvpForm.elements.status.value = existing.status || "Attending";
+        rsvpForm.elements.adults.value = existing.adults ?? 0;
+        rsvpForm.elements.kids.value = existing.kids ?? 0;
+        rsvpForm.elements.notes.value = existing.notes || "";
+        document.getElementById("rsvpVerification").hidden = true;
+        codeInput.required = false;
+        document.getElementById("editRsvp").hidden = true;
+        document.getElementById("submitRsvp").textContent = "Update RSVP";
+        document.getElementById("submitRsvp").hidden = false;
+        message.textContent = "Your RSVP is ready to edit.";
+      } catch (error) {
+        message.className = "form-message error";
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     rsvpForm.addEventListener("submit", async event => {
       event.preventDefault();
       const submitButton = document.getElementById("submitRsvp");
       const message = document.getElementById("rsvpMessage");
       const values = Object.fromEntries(new FormData(rsvpForm));
+      values.action = rsvpEditToken ? "update" : "submit";
+      values.editToken = rsvpEditToken;
       values.adults = Number(values.adults);
       values.kids = Number(values.kids);
       submitButton.disabled = true;
@@ -323,14 +402,9 @@
       message.textContent = "Submitting…";
 
       try {
-        const response = await fetch("/api/register?resource=rsvp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values)
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Unable to submit your RSVP.");
+        const data = await postRsvpAction(values);
         rsvpForm.reset();
+        resetRsvpEditMode();
         message.textContent = data.message;
         setTimeout(() => rsvpDialog.close(), 1400);
       } catch (error) {
@@ -340,6 +414,29 @@
         submitButton.disabled = false;
       }
     });
+
+    async function postRsvpAction(values) {
+      const response = await fetch("/api/register?resource=rsvp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values)
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to process your RSVP.");
+      }
+      return data;
+    }
+
+    function resetRsvpEditMode() {
+      rsvpEditToken = "";
+      rsvpForm.elements.email.readOnly = false;
+      rsvpForm.elements.verificationCode.required = false;
+      document.getElementById("rsvpVerification").hidden = true;
+      document.getElementById("editRsvp").hidden = false;
+      document.getElementById("submitRsvp").textContent = "Submit RSVP";
+      document.getElementById("submitRsvp").hidden = false;
+    }
 
     function escapeHtml(value) {
       return String(value ?? "")
