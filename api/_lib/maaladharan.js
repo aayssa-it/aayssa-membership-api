@@ -1355,6 +1355,7 @@ export async function fetchMaaladharanDashboardSummary() {
   const overallStats = {
     totalRegistrations: registrations.length,
     primary: 0,
+    spouse: 0,
     additionalMember: 0,
     kanniSwamy: 0,
     nonKanni: 0,
@@ -1367,6 +1368,8 @@ export async function fetchMaaladharanDashboardSummary() {
   for (const registration of registrations) {
     if (registration.participantType === "Primary") {
       overallStats.primary += 1;
+    } else if (registration.participantType === "Spouse") {
+      overallStats.spouse += 1;
     } else {
       overallStats.additionalMember += 1;
     }
