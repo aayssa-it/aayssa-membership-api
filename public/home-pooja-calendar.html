@@ -396,30 +396,7 @@
       if (button.dataset.rsvpDate) {
         url.searchParams.set("date", button.dataset.rsvpDate);
       }
-      const shareData = {
-        title: "AAYSSA Home Pooja RSVP",
-        text: `Please RSVP for ${button.dataset.event}.`,
-        url: url.toString()
-      };
-      const originalLabel = button.textContent;
-
-      if (navigator.share) {
-        try {
-          await navigator.share(shareData);
-          button.textContent = "Shared";
-        } catch (error) {
-          if (error?.name === "AbortError") return;
-          await copyRsvpLink(button, url.toString());
-          return;
-        }
-      } else {
-        await copyRsvpLink(button, url.toString());
-        return;
-      }
-
-      window.setTimeout(() => {
-        button.textContent = originalLabel;
-      }, 2500);
+      await copyRsvpLink(button, url.toString());
     }
 
     async function copyRsvpLink(button, url) {
@@ -427,7 +404,7 @@
 
       try {
         await navigator.clipboard.writeText(url);
-        button.textContent = "Link Copied";
+        button.textContent = "RSVP Link Copied";
         window.setTimeout(() => {
           button.textContent = originalLabel;
         }, 2500);

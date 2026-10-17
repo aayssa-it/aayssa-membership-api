@@ -3401,23 +3401,6 @@
 
   async function shareRsvpLink(reference, eventLabel, date = "") {
     const url = getRsvpShareUrl(reference, date);
-    const shareData = {
-      title: "AAYSSA Home Pooja RSVP",
-      text: `Please RSVP for ${eventLabel}.`,
-      url
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        return "shared";
-      } catch (error) {
-        if (error?.name === "AbortError") {
-          return "cancelled";
-        }
-      }
-    }
-
     await navigator.clipboard.writeText(url);
     return "copied";
   }
@@ -3466,11 +3449,7 @@
             button.dataset.rsvpDate || ""
           );
 
-          if (result === "cancelled") {
-            return;
-          }
-
-          button.textContent = result === "shared" ? "RSVP Link Shared" : "RSVP Link Copied";
+          button.textContent = "RSVP Link Copied";
           window.setTimeout(() => {
             button.textContent = originalLabel;
           }, 2500);
