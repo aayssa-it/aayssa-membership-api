@@ -734,7 +734,152 @@
     }
 
     .home-pooja-admin-dropdown-content {
-      padding: 4px 16px 12px;
+      padding: 16px;
+    }
+
+    .rsvp-groups {
+      display: grid;
+      gap: 16px;
+    }
+
+    .rsvp-event-card {
+      overflow: hidden;
+      border: 1px solid #e4ddd3;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(82, 49, 18, 0.06);
+    }
+
+    .rsvp-event-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 18px;
+      border-bottom: 1px solid #eadfce;
+      background: #fffaf2;
+    }
+
+    .rsvp-event-title {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .rsvp-event-title strong {
+      color: #4f2e12;
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .rsvp-event-title span {
+      color: #6f6256;
+      line-height: 1.4;
+    }
+
+    .rsvp-summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .rsvp-summary-item {
+      min-width: 118px;
+      padding: 8px 10px;
+      border: 1px solid #e4d4bb;
+      border-radius: 8px;
+      background: #fff;
+      color: #5d5044;
+      font-size: 12px;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .rsvp-summary-item strong {
+      display: block;
+      margin-bottom: 2px;
+      color: #713d0d;
+      font-size: 13px;
+    }
+
+    .rsvp-table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .rsvp-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+    }
+
+    .rsvp-table th,
+    .rsvp-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #eee8df;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .rsvp-table th {
+      background: #f8f4ee;
+      color: #5b4634;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .rsvp-table td {
+      color: #302a25;
+      line-height: 1.4;
+    }
+
+    .rsvp-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .rsvp-table tbody tr:hover {
+      background: #fffaf3;
+    }
+
+    .rsvp-contact {
+      overflow-wrap: anywhere;
+    }
+
+    .rsvp-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #e8f4eb;
+      color: #25633a;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .rsvp-empty-value {
+      color: #9a9087;
+    }
+
+    @media (max-width: 760px) {
+      .home-pooja-admin-dropdown-content {
+        padding: 12px;
+      }
+
+      .rsvp-event-header {
+        flex-direction: column;
+      }
+
+      .rsvp-summary {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .rsvp-summary-item {
+        flex: 1 1 130px;
+      }
     }
 
     .home-pooja-block-edit-form,
@@ -2892,38 +3037,62 @@
       return `<p>${escapeHtml(emptyMessage)}</p>`;
     }
 
-    return groups.map(group => `
-      <div class="maaladharan-registration">
-        <strong>${escapeHtml(group.type)} · ${escapeHtml(formatPortalDate(group.date))}</strong>
-        <span>${escapeHtml(group.name || "")}${group.time ? ` · ${escapeHtml(group.time)}` : ""}</span>
-        <span>
-          Attending: ${Number(group.summary?.attending?.households) || 0} responses,
-          ${Number(group.summary?.attending?.adults) || 0} adults,
-          ${Number(group.summary?.attending?.kids) || 0} kids ·
-          Maybe: ${Number(group.summary?.maybe?.households) || 0} responses,
-          ${Number(group.summary?.maybe?.adults) || 0} adults,
-          ${Number(group.summary?.maybe?.kids) || 0} kids
-        </span>
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Name</th><th>Status</th><th>Adults</th><th>Kids</th><th>Email</th><th>Phone</th><th>Notes</th></tr></thead>
-            <tbody>
-              ${group.responses.map(rsvp => `
-                <tr>
-                  <td>${escapeHtml(rsvp.attendeeName)}</td>
-                  <td>${escapeHtml(rsvp.status)}</td>
-                  <td>${Number(rsvp.adults) || 0}</td>
-                  <td>${Number(rsvp.kids) || 0}</td>
-                  <td>${escapeHtml(rsvp.email)}</td>
-                  <td>${escapeHtml(rsvp.phone)}</td>
-                  <td>${escapeHtml(rsvp.notes)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
+    return `
+      <div class="rsvp-groups">
+        ${groups.map(group => `
+          <section class="rsvp-event-card">
+            <div class="rsvp-event-header">
+              <div class="rsvp-event-title">
+                <strong>${escapeHtml(group.type)} · ${escapeHtml(formatPortalDate(group.date))}</strong>
+                <span>${escapeHtml(group.name || "")}${group.time ? ` · ${escapeHtml(group.time)}` : ""}</span>
+              </div>
+              <div class="rsvp-summary" aria-label="RSVP summary">
+                <div class="rsvp-summary-item">
+                  <strong>Attending</strong>
+                  ${Number(group.summary?.attending?.households) || 0} responses ·
+                  ${Number(group.summary?.attending?.adults) || 0} adults ·
+                  ${Number(group.summary?.attending?.kids) || 0} kids
+                </div>
+                <div class="rsvp-summary-item">
+                  <strong>Maybe</strong>
+                  ${Number(group.summary?.maybe?.households) || 0} responses ·
+                  ${Number(group.summary?.maybe?.adults) || 0} adults ·
+                  ${Number(group.summary?.maybe?.kids) || 0} kids
+                </div>
+              </div>
+            </div>
+            <div class="rsvp-table-wrapper">
+              <table class="rsvp-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Adults</th>
+                    <th>Kids</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${group.responses.map(rsvp => `
+                    <tr>
+                      <td><strong>${escapeHtml(rsvp.attendeeName)}</strong></td>
+                      <td><span class="rsvp-status">${escapeHtml(rsvp.status)}</span></td>
+                      <td>${Number(rsvp.adults) || 0}</td>
+                      <td>${Number(rsvp.kids) || 0}</td>
+                      <td class="rsvp-contact">${rsvp.email ? escapeHtml(rsvp.email) : '<span class="rsvp-empty-value">—</span>'}</td>
+                      <td class="rsvp-contact">${rsvp.phone ? escapeHtml(rsvp.phone) : '<span class="rsvp-empty-value">—</span>'}</td>
+                      <td>${rsvp.notes ? escapeHtml(rsvp.notes) : '<span class="rsvp-empty-value">—</span>'}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        `).join("")}
       </div>
-    `).join("");
+    `;
   }
 
 

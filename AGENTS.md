@@ -331,7 +331,7 @@ Board/Admin dashboard includes:
 - Registered Swamies is a sortable table showing name, Padi count, age, and Maaladharan date; its heading shows the total number of registered Swamies.
 - Member directory with search, pagination, and sorting.
 - Board/Admin Home Pooja booking review without an approval step.
-- Home Pooja Bookings and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings.
+- RSVP Responses, Home Pooja Bookings, and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings. RSVP responses are grouped into event cards with compact Attending/Maybe totals and a responsive attendee table.
 - Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
 - Board/Admin can cancel an active Home Pooja booking after confirmation. The row remains for audit history with `Cancelled` status, while the date immediately returns to availability when its normal or custom availability rule permits.
 - Cancelling a Home Pooja booking sends the host a best-effort Resend cancellation email. Successful delivery is recorded in the existing Admin Notes field, and cancelled rows show that an email was already sent next to the Board/Admin send/resend action. Bookings cancelled before this tracking was deployed remain eligible for sending.
