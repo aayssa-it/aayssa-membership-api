@@ -5506,6 +5506,9 @@
                           type="button" data-action="send-cancellation-email">
                           Send Cancellation Email
                         </button>
+                        ${item.adminNotes?.includes("Cancellation email sent on")
+                          ? `<span class="field-note">Cancellation email already sent.</span>`
+                          : ""}
                       </div>
                     `
                     : ""

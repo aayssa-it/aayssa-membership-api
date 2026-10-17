@@ -21,6 +21,7 @@ import {
 
 const AAYSSA_FAMILY_WHATSAPP_URL =
   "https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t";
+const AAYSSA_OFFICIAL_EMAIL = "aayssa.official@gmail.com";
 
 export default async function handler(req, res) {
 
@@ -595,6 +596,7 @@ async function sendMembershipConfirmation({
       body: JSON.stringify({
         from,
         to: [email],
+        cc: [AAYSSA_OFFICIAL_EMAIL],
         subject:
           "Welcome to the AAYSSA Family",
         ...(replyTo ? { reply_to: replyTo } : {}),

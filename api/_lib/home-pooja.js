@@ -18,6 +18,9 @@ const HOME_POOJA_CHECKLIST_URL =
 const MEMBER_BOOKING_OPENS_AT =
   Date.parse("2026-10-14T22:00:00Z");
 
+const AAYSSA_OFFICIAL_EMAIL = "aayssa.official@gmail.com";
+const CANCELLATION_EMAIL_SENT_NOTE = "Cancellation email sent on";
+
 const FIELDS = {
   calendarEntry: 11317807,
   entryType: 11317808,
@@ -518,6 +521,11 @@ export async function handleAdminHomePooja(req, res) {
       });
       const emailSent =
         await sendHomePoojaCancellationSafely(mapEntry(row));
+
+      if (emailSent) {
+        await recordCancellationEmailSent(id, notes);
+      }
+
       responseMessage = emailSent
         ? "The booking was cancelled and a cancellation email was sent."
         : "The booking was cancelled, but the cancellation email could not be sent.";
@@ -541,6 +549,10 @@ export async function handleAdminHomePooja(req, res) {
         throw error;
       }
 
+      await recordCancellationEmailSent(
+        id,
+        cleanString(row[fieldKey(FIELDS.adminNotes)])
+      );
       responseMessage = "The cancellation email was sent.";
     } else if (action === "unblock") {
       if (getSelect(row, FIELDS.entryType) !== "Blocked") {
@@ -1019,6 +1031,7 @@ async function sendHomePoojaConfirmation({ email, request }) {
     body: JSON.stringify({
       from,
       to: [email],
+      cc: [AAYSSA_OFFICIAL_EMAIL],
       subject: `AAYSSA Home Pooja Booking Confirmation — ${date}`,
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [
@@ -1103,6 +1116,7 @@ async function sendHomePoojaCancellation(booking) {
     body: JSON.stringify({
       from,
       to: [email],
+      cc: [AAYSSA_OFFICIAL_EMAIL],
       subject: `AAYSSA Home Pooja Booking Cancelled — ${date}`,
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [
@@ -1144,6 +1158,21 @@ async function sendHomePoojaCancellation(booking) {
     );
     throw new Error("Unable to send Home Pooja cancellation email.");
   }
+}
+
+async function recordCancellationEmailSent(id, existingNotes) {
+  const marker = `${CANCELLATION_EMAIL_SENT_NOTE} ${todayInEasternTime()}`;
+  const notes = cleanString(existingNotes);
+  const withoutPreviousMarker = notes
+    .split(" | ")
+    .filter(note => !note.startsWith(CANCELLATION_EMAIL_SENT_NOTE));
+
+  await patchEntry(id, {
+    [fieldKey(FIELDS.adminNotes)]: [
+      ...withoutPreviousMarker,
+      marker
+    ].filter(Boolean).join(" | ").slice(0, 1000)
+  });
 }
 
 function formatHomePoojaEmailDate(value) {

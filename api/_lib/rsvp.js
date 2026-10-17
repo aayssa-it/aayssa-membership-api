@@ -659,6 +659,7 @@ async function sendRsvpEmail({ kind, rsvp, booking }) {
     body: JSON.stringify({
       from,
       to: [rsvp.email],
+      cc: [AAYSSA_EVENT_SUMMARY_EMAIL],
       subject: `AAYSSA ${title} — ${date}`,
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [
@@ -747,7 +748,9 @@ async function sendHostSummary({ kind, booking, rsvps }) {
     body: JSON.stringify({
       from,
       to: [booking.email],
-      ...(!event ? { cc: [AAYSSA_EVENT_SUMMARY_EMAIL] } : {}),
+      ...(cleanString(booking.email).toLowerCase() !== AAYSSA_EVENT_SUMMARY_EMAIL
+        ? { cc: [AAYSSA_EVENT_SUMMARY_EMAIL] }
+        : {}),
       subject: `AAYSSA ${subjectType} ${label} — ${date}`,
       ...(replyTo ? { reply_to: replyTo } : {}),
       text: [

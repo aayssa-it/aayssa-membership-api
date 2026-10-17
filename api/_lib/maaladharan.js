@@ -14,6 +14,7 @@ const SEASON_START = "2026-10-25";
 const SEASON_END = "2026-12-04";
 const WHATSAPP_GROUP_URL =
   "https://chat.whatsapp.com/Ggon3OSjwHX444MlXJqKVv?s=cl&p=i&mlu=0";
+const AAYSSA_OFFICIAL_EMAIL = "aayssa.official@gmail.com";
 
 const PADI_VALUES = [
   "0 (Kanni Swamy)",
@@ -512,6 +513,7 @@ async function sendMaaladharanConfirmation({
       body: JSON.stringify({
         from,
         to: [email],
+        cc: [AAYSSA_OFFICIAL_EMAIL],
         subject:
           `AAYSSA Maaladharan Registration Confirmation — ${participantName}`,
         ...(replyTo ? { reply_to: replyTo } : {}),
