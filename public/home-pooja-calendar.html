@@ -164,7 +164,7 @@
   </main>
   <dialog id="rsvpDialog">
     <form id="rsvpForm" class="rsvp-form">
-      <h2>New Home Pooja RSVP</h2>
+      <h2 id="rsvpDialogTitle">New RSVP</h2>
       <p id="rsvpEvent"></p>
       <input type="hidden" name="bookingReference">
       <input type="text" name="website" tabindex="-1" autocomplete="off" hidden>
@@ -192,7 +192,7 @@
   </dialog>
   <dialog id="editRsvpDialog">
     <form id="editRsvpForm" class="rsvp-form">
-      <h2>Edit Home Pooja RSVP</h2>
+      <h2 id="editRsvpDialogTitle">Edit RSVP</h2>
       <p id="editRsvpEvent"></p>
       <input type="hidden" name="bookingReference">
       <div id="editRsvpLookup" class="form-grid">
@@ -259,10 +259,13 @@
           calendar.textContent = "No Home Pooja dates are currently published.";
           return;
         }
-        const sharedReference = new URLSearchParams(window.location.search).get("rsvp");
-        const sharedItem = sharedReference
+        const sharedParams = new URLSearchParams(window.location.search);
+        const sharedReference = sharedParams.get("rsvp");
+        const sharedDate = sharedParams.get("date");
+        const sharedItem = sharedReference || sharedDate
           ? dates.find(item =>
-              String(item.bookingId || item.eventReference || "") === sharedReference
+              String(item.bookingId || item.eventReference || "") === sharedReference ||
+              item.date === sharedDate
             )
           : null;
         const sharedMonthIndex = sharedItem
@@ -273,8 +276,14 @@
         renderCalendar();
 
         if (sharedItem) {
+          const resolvedReference = String(
+            sharedItem.bookingId || sharedItem.eventReference || ""
+          );
           const newRsvpButton = [...calendar.querySelectorAll('[data-rsvp-action="new"]')]
-            .find(button => button.dataset.rsvpReference === sharedReference);
+            .find(button =>
+              button.dataset.rsvpReference === resolvedReference ||
+              button.dataset.rsvpDate === sharedItem.date
+            );
           if (newRsvpButton) {
             openRsvp(newRsvpButton);
           }
@@ -320,10 +329,13 @@
         const rsvpLabel = status === "Blocked"
           ? item?.eventName || item?.reason || "AAYSSA Event"
           : item?.requesterName || "Home Pooja";
+        const rsvpTitle = status === "Blocked"
+          ? "AAYSSA Event RSVP"
+          : `${rsvpLabel} Home Pooja RSVP`;
         const rsvpButton = rsvpReference
-          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="share" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Share RSVP</button>`
+          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
+             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>
+             <button type="button" class="rsvp-button" data-rsvp-action="share" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Share RSVP</button>`
           : "";
         const rsvpSummary = (status === "Booked" || status === "Blocked") && item.rsvpSummary
           ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
@@ -381,6 +393,9 @@
     async function shareRsvp(button) {
       const url = new URL(window.location.pathname, window.location.origin);
       url.searchParams.set("rsvp", button.dataset.rsvpReference);
+      if (button.dataset.rsvpDate) {
+        url.searchParams.set("date", button.dataset.rsvpDate);
+      }
       const shareData = {
         title: "AAYSSA Home Pooja RSVP",
         text: `Please RSVP for ${button.dataset.event}.`,
@@ -426,6 +441,8 @@
       rsvpForm.elements.bookingReference.value = button.dataset.rsvpReference;
       rsvpForm.elements.adults.value = "1";
       rsvpForm.elements.kids.value = "0";
+      document.getElementById("rsvpDialogTitle").textContent =
+        button.dataset.rsvpTitle || "New RSVP";
       document.getElementById("rsvpEvent").textContent = button.dataset.event;
       document.getElementById("rsvpMessage").textContent = "";
       rsvpDialog.showModal();
@@ -435,6 +452,8 @@
       editRsvpForm.reset();
       resetEditRsvpDialog();
       editRsvpForm.elements.bookingReference.value = button.dataset.rsvpReference;
+      document.getElementById("editRsvpDialogTitle").textContent =
+        `Edit ${button.dataset.rsvpTitle || "RSVP"}`;
       document.getElementById("editRsvpEvent").textContent = button.dataset.event;
       editRsvpDialog.showModal();
     }

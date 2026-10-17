@@ -2789,6 +2789,7 @@
                             type="button"
                             data-action="share-rsvp"
                             data-rsvp-reference="${escapeHtml(request.id)}"
+                            data-rsvp-date="${escapeHtml(request.poojaDate)}"
                             data-rsvp-event="${escapeHtml(`Home Pooja on ${formatPortalDate(request.poojaDate)}`)}">
                             Share RSVP Link
                           </button>
@@ -3328,15 +3329,24 @@
 
   function renderHomePoojaInvitationBuilder(request) {
     const period = getHomePoojaInvitationPeriod(request);
+    const isAayssaEvent = request.isAayssaEvent === true;
+    const organizerName = request.requesterName ||
+      (isAayssaEvent ? "Atlanta Ayyappa Seva Sangam (AAYSSA)" : getCurrentFullName(currentMember));
+    const invitationTitle = isAayssaEvent
+      ? "AAYSSA Event Invitation"
+      : "AAYSSA Home Pooja Invitation";
+    const invitationEvent = isAayssaEvent
+      ? request.eventName || "Special AAYSSA Event"
+      : `${period} Home Pooja`;
 
     return `
       <div class="home-pooja-invitation-builder"
         data-invitation-builder="${escapeHtml(request.id)}" hidden>
         <div class="maaladharan-form">
           <div class="form-field">
-            <label>Host Name</label>
+            <label>${isAayssaEvent ? "Organizer Name" : "Host Name"}</label>
             <input type="text" data-invitation-name
-              value="${escapeHtml(request.requesterName || getCurrentFullName(currentMember))}">
+              value="${escapeHtml(organizerName)}">
           </div>
           <div class="form-field full-width">
             <label>Address</label>
@@ -3345,12 +3355,14 @@
         </div>
         <div class="home-pooja-invitation-preview" data-invitation-preview>
           <span>Swamiye Saranam Ayyappa</span>
-          <h3>AAYSSA Home Pooja Invitation</h3>
-          <span>You and your family are cordially invited to join us for a</span>
-          <strong>${escapeHtml(period)} Home Pooja</strong>
-          <strong class="invitation-host" data-invitation-host>${escapeHtml(request.requesterName || getCurrentFullName(currentMember))}</strong>
+          <h3>${escapeHtml(invitationTitle)}</h3>
+          <span>You and your family are cordially invited to join us for</span>
+          <strong>${escapeHtml(invitationEvent)}</strong>
+          <strong class="invitation-host" data-invitation-host>${escapeHtml(organizerName)}</strong>
           <span>${escapeHtml(formatPortalDate(request.poojaDate))}</span>
-          <span>${escapeHtml(request.preferredTime || "")}</span>
+          ${request.preferredTime
+            ? `<span>${escapeHtml(request.preferredTime)}</span>`
+            : ""}
           <span class="invitation-address" data-invitation-location>${escapeHtml(request.poojaAddress || "")}</span>
           <span>We look forward to your presence and blessings.</span>
         </div>
@@ -3377,15 +3389,18 @@
   }
 
 
-  function getRsvpShareUrl(reference) {
+  function getRsvpShareUrl(reference, date = "") {
     const url = new URL("/home-pooja-calendar.html", window.location.origin);
     url.searchParams.set("rsvp", String(reference));
+    if (date) {
+      url.searchParams.set("date", date);
+    }
     return url.toString();
   }
 
 
-  async function shareRsvpLink(reference, eventLabel) {
-    const url = getRsvpShareUrl(reference);
+  async function shareRsvpLink(reference, eventLabel, date = "") {
+    const url = getRsvpShareUrl(reference, date);
     const shareData = {
       title: "AAYSSA Home Pooja RSVP",
       text: `Please RSVP for ${eventLabel}.`,
@@ -3408,8 +3423,8 @@
   }
 
 
-  function setupHomePoojaInvitations() {
-    const section = document.getElementById("homePoojaSection");
+  function setupHomePoojaInvitations(sectionId = "homePoojaSection") {
+    const section = document.getElementById(sectionId);
 
     if (!section || section.dataset.invitationReady === "true") {
       return;
@@ -3447,7 +3462,8 @@
         try {
           const result = await shareRsvpLink(
             button.dataset.rsvpReference,
-            button.dataset.rsvpEvent || "this Home Pooja"
+            button.dataset.rsvpEvent || "this Home Pooja",
+            button.dataset.rsvpDate || ""
           );
 
           if (result === "cancelled") {
@@ -3459,7 +3475,13 @@
             button.textContent = originalLabel;
           }, 2500);
         } catch (error) {
-          window.prompt("Copy this RSVP link:", getRsvpShareUrl(button.dataset.rsvpReference));
+          window.prompt(
+            "Copy this RSVP link:",
+            getRsvpShareUrl(
+              button.dataset.rsvpReference,
+              button.dataset.rsvpDate || ""
+            )
+          );
         }
         return;
       }
@@ -3503,6 +3525,8 @@
 
       if (action === "print-invitation") {
         const printWindow = window.open("", "_blank");
+        const printTitle = preview.querySelector("h3")?.textContent ||
+          "AAYSSA Invitation";
 
         if (!printWindow) {
           message.className = "inline-message error";
@@ -3510,7 +3534,7 @@
           return;
         }
 
-        printWindow.document.write(`<!doctype html><html><head><title>Home Pooja Invitation</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#4e2c0b}.invitation{max-width:650px;margin:auto;padding:48px 32px;border:3px solid #b97716;border-radius:18px;background:#fff8e8;text-align:center;line-height:1.7}.invitation h3{font-family:Georgia,serif;font-size:34px;color:#8a3f12;margin:8px 0 18px}.invitation strong,.invitation span{display:block}.invitation-host{font-size:24px;color:#713d0d;margin:14px 0}.invitation-address{margin:14px 0;white-space:pre-line}@media print{body{padding:0}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#4e2c0b}.invitation{max-width:650px;margin:auto;padding:48px 32px;border:3px solid #b97716;border-radius:18px;background:#fff8e8;text-align:center;line-height:1.7}.invitation h3{font-family:Georgia,serif;font-size:34px;color:#8a3f12;margin:8px 0 18px}.invitation strong,.invitation span{display:block}.invitation-host{font-size:24px;color:#713d0d;margin:14px 0}.invitation-address{margin:14px 0;white-space:pre-line}@media print{body{padding:0}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
         printWindow.document.close();
       }
     });
@@ -5821,10 +5845,23 @@
                   <div class="home-pooja-block-actions">
                     <button class="small-action-button"
                       type="button" data-action="edit-block">Edit</button>
+                    <button class="small-action-button"
+                      type="button" data-action="open-invitation">
+                      Create Invitation
+                    </button>
                     <button class="small-action-button secondary-button"
                       type="button" data-action="unblock-date"
                       data-pooja-date="${escapeHtml(item.date)}">Unblock</button>
                   </div>
+                  ${renderHomePoojaInvitationBuilder({
+                    id: `event:${item.date}`,
+                    isAayssaEvent: true,
+                    eventName: item.reason || "Special AAYSSA Event",
+                    requesterName: "Atlanta Ayyappa Seva Sangam (AAYSSA)",
+                    poojaDate: item.date,
+                    preferredTime: "",
+                    poojaAddress: ""
+                  })}
                   <form class="maaladharan-form home-pooja-block-edit-form"
                     data-original-date="${escapeHtml(item.date)}" hidden>
                     <div class="form-field">
@@ -5890,6 +5927,7 @@
       calendarDates,
       { adminControls: true }
     );
+    setupHomePoojaInvitations("homePoojaAdminContent");
 
     blockForm.addEventListener(
       "submit",

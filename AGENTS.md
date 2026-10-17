@@ -332,7 +332,7 @@ Board/Admin dashboard includes:
 - Member directory with search, pagination, and sorting.
 - Board/Admin Home Pooja booking review without an approval step.
 - RSVP Responses, Home Pooja Bookings, and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings. RSVP responses are grouped into event cards with compact Attending/Maybe totals and a responsive attendee table.
-- Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address.
+- Home Pooja Bookings provides inline Board/Admin editing for scheduled time and Pooja address. Confirmed hosts can create editable, copyable, and printable Home Pooja invitations; Board/Admin users can create the equivalent AAYSSA Event invitation from any Administration Block, with editable organizer and address fields.
 - Board/Admin can cancel an active Home Pooja booking after confirmation. The row remains for audit history with `Cancelled` status, while the date immediately returns to availability when its normal or custom availability rule permits.
 - Cancelling a Home Pooja booking sends the host a best-effort Resend cancellation email. Successful delivery is recorded in the existing Admin Notes field, and cancelled rows show that an email was already sent next to the Board/Admin send/resend action. Bookings cancelled before this tracking was deployed remain eligible for sending.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
@@ -376,7 +376,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates have separate New RSVP, Edit RSVP, and Share RSVP buttons; shared `?rsvp=<reference>` links navigate to the event month and open its RSVP form automatically. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates have separate New RSVP, Edit RSVP, and Share RSVP buttons; shared `?rsvp=<reference>&date=<date>` links navigate to the event month and open its RSVP form automatically, using the host name in Home Pooja dialog titles and an AAYSSA Event title for blocked events. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
 
 ## Public Maaladharan Registration Embed
 
