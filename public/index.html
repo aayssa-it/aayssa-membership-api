@@ -2785,6 +2785,13 @@
                             data-invitation-id="${escapeHtml(request.id)}">
                             Create Invitation
                           </button>
+                          <button class="small-action-button"
+                            type="button"
+                            data-action="share-rsvp"
+                            data-rsvp-reference="${escapeHtml(request.id)}"
+                            data-rsvp-event="${escapeHtml(`Home Pooja on ${formatPortalDate(request.poojaDate)}`)}">
+                            Share RSVP Link
+                          </button>
                         </div>
                         ${renderHomePoojaInvitationBuilder(request)}
                       `
@@ -3370,6 +3377,37 @@
   }
 
 
+  function getRsvpShareUrl(reference) {
+    const url = new URL("/home-pooja-calendar.html", window.location.origin);
+    url.searchParams.set("rsvp", String(reference));
+    return url.toString();
+  }
+
+
+  async function shareRsvpLink(reference, eventLabel) {
+    const url = getRsvpShareUrl(reference);
+    const shareData = {
+      title: "AAYSSA Home Pooja RSVP",
+      text: `Please RSVP for ${eventLabel}.`,
+      url
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return "shared";
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          return "cancelled";
+        }
+      }
+    }
+
+    await navigator.clipboard.writeText(url);
+    return "copied";
+  }
+
+
   function setupHomePoojaInvitations() {
     const section = document.getElementById("homePoojaSection");
 
@@ -3402,6 +3440,30 @@
       }
 
       const action = button.dataset.action;
+
+      if (action === "share-rsvp") {
+        const originalLabel = button.textContent.trim();
+
+        try {
+          const result = await shareRsvpLink(
+            button.dataset.rsvpReference,
+            button.dataset.rsvpEvent || "this Home Pooja"
+          );
+
+          if (result === "cancelled") {
+            return;
+          }
+
+          button.textContent = result === "shared" ? "RSVP Link Shared" : "RSVP Link Copied";
+          window.setTimeout(() => {
+            button.textContent = originalLabel;
+          }, 2500);
+        } catch (error) {
+          window.prompt("Copy this RSVP link:", getRsvpShareUrl(button.dataset.rsvpReference));
+        }
+        return;
+      }
+
       const booking = button.closest(".maaladharan-registration");
       const builder = action === "open-invitation"
         ? booking?.querySelector("[data-invitation-builder]")

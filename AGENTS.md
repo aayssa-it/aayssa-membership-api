@@ -376,7 +376,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates have separate New RSVP and Edit RSVP buttons and dialogs; editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays the host name, scheduled time, address, and aggregate Attending/Maybe guest counts; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates have separate New RSVP, Edit RSVP, and Share RSVP buttons; shared `?rsvp=<reference>` links navigate to the event month and open its RSVP form automatically. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
 
 ## Public Maaladharan Registration Embed
 

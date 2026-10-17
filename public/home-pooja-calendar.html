@@ -259,8 +259,26 @@
           calendar.textContent = "No Home Pooja dates are currently published.";
           return;
         }
-        currentMonthIndex = 0;
+        const sharedReference = new URLSearchParams(window.location.search).get("rsvp");
+        const sharedItem = sharedReference
+          ? dates.find(item =>
+              String(item.bookingId || item.eventReference || "") === sharedReference
+            )
+          : null;
+        const sharedMonthIndex = sharedItem
+          ? monthKeys.indexOf(sharedItem.date.slice(0, 7))
+          : -1;
+
+        currentMonthIndex = sharedMonthIndex >= 0 ? sharedMonthIndex : 0;
         renderCalendar();
+
+        if (sharedItem) {
+          const newRsvpButton = [...calendar.querySelectorAll('[data-rsvp-action="new"]')]
+            .find(button => button.dataset.rsvpReference === sharedReference);
+          if (newRsvpButton) {
+            openRsvp(newRsvpButton);
+          }
+        }
       } catch (error) {
         calendar.className = "message error";
         calendar.textContent = error.message;
@@ -304,7 +322,8 @@
           : item?.requesterName || "Home Pooja";
         const rsvpButton = rsvpReference
           ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>`
+             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>
+             <button type="button" class="rsvp-button" data-rsvp-action="share" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Share RSVP</button>`
           : "";
         const rsvpSummary = (status === "Booked" || status === "Blocked") && item.rsvpSummary
           ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
@@ -347,11 +366,59 @@
         renderCalendar();
       });
       calendar.querySelectorAll("[data-rsvp-reference]").forEach(button => {
-        button.addEventListener("click", () => {
-          if (button.dataset.rsvpAction === "edit") openEditRsvp(button);
-          else openRsvp(button);
+        button.addEventListener("click", async () => {
+          if (button.dataset.rsvpAction === "edit") {
+            openEditRsvp(button);
+          } else if (button.dataset.rsvpAction === "share") {
+            await shareRsvp(button);
+          } else {
+            openRsvp(button);
+          }
         });
       });
+    }
+
+    async function shareRsvp(button) {
+      const url = new URL(window.location.pathname, window.location.origin);
+      url.searchParams.set("rsvp", button.dataset.rsvpReference);
+      const shareData = {
+        title: "AAYSSA Home Pooja RSVP",
+        text: `Please RSVP for ${button.dataset.event}.`,
+        url: url.toString()
+      };
+      const originalLabel = button.textContent;
+
+      if (navigator.share) {
+        try {
+          await navigator.share(shareData);
+          button.textContent = "Shared";
+        } catch (error) {
+          if (error?.name === "AbortError") return;
+          await copyRsvpLink(button, url.toString());
+          return;
+        }
+      } else {
+        await copyRsvpLink(button, url.toString());
+        return;
+      }
+
+      window.setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 2500);
+    }
+
+    async function copyRsvpLink(button, url) {
+      const originalLabel = button.textContent;
+
+      try {
+        await navigator.clipboard.writeText(url);
+        button.textContent = "Link Copied";
+        window.setTimeout(() => {
+          button.textContent = originalLabel;
+        }, 2500);
+      } catch (error) {
+        window.prompt("Copy this RSVP link:", url);
+      }
     }
 
     function openRsvp(button) {
