@@ -315,6 +315,7 @@ Member portal (`public/index.html`) includes:
 
 Board/Admin dashboard includes:
 
+- A secondary tab bar organizes the administration area into Overview, Maaladharan, Home Pooja & RSVP, and Member Directory panels so only one administrative category is visible at a time.
 - Registered families.
 - Total people.
 - Adults.

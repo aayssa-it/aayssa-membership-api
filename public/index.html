@@ -1188,6 +1188,44 @@
       margin-bottom: 20px;
     }
 
+    .admin-dashboard-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding: 6px;
+      background: #f4eee5;
+      border: 1px solid #e4d8c8;
+      border-radius: 12px;
+    }
+
+    .admin-dashboard-tab {
+      flex: 1 1 150px;
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      background: transparent;
+      color: #684018;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .admin-dashboard-tab:hover {
+      background: #fffaf2;
+    }
+
+    .admin-dashboard-tab[aria-selected="true"] {
+      background: #8b5100;
+      color: white;
+      box-shadow: 0 2px 8px rgba(93, 53, 8, 0.2);
+    }
+
+    .admin-dashboard-panel[hidden] {
+      display: none;
+    }
+
     .dashboard-row {
       display: flex;
       justify-content: space-between;
@@ -7463,6 +7501,39 @@
      DASHBOARD
      ===================================================== */
 
+  function setupAdminDashboardTabs() {
+    const tabs = Array.from(
+      document.querySelectorAll("[data-admin-dashboard-tab]")
+    );
+    const panels = Array.from(
+      document.querySelectorAll("[data-admin-dashboard-panel]")
+    );
+
+    if (!tabs.length || !panels.length) {
+      return;
+    }
+
+    const selectPanel = target => {
+      tabs.forEach(tab => {
+        const selected = tab.dataset.adminDashboardTab === target;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+
+      panels.forEach(panel => {
+        panel.hidden = panel.dataset.adminDashboardPanel !== target;
+      });
+    };
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        selectPanel(tab.dataset.adminDashboardTab);
+      });
+    });
+
+    selectPanel("overview");
+  }
+
   async function loadDashboardStats() {
 
     const container =
@@ -7545,6 +7616,28 @@
       container.innerHTML = `
 
 
+        <div class="admin-dashboard-tabs" role="tablist"
+          aria-label="Administration dashboard sections">
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="overview" aria-selected="true">
+            Overview
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="maaladharan" aria-selected="false">
+            Maaladharan
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="home-pooja" aria-selected="false">
+            Home Pooja &amp; RSVP
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="members" aria-selected="false">
+            Member Directory
+          </button>
+        </div>
+
+        <section class="admin-dashboard-panel"
+          data-admin-dashboard-panel="overview">
         <div class="stats-grid">
 
 
@@ -7727,10 +7820,6 @@
 
 
 
-        ${renderMaaladharanDashboard(
-          maaladharanSummary
-        )}
-
         <div class="dashboard-grid dashboard-trend-grid">
           ${renderDonationTrend(
             donationSummary
@@ -7741,23 +7830,36 @@
             stats.registrationTrendAvailable
           )}
         </div>
+        </section>
 
-        ${renderMaaladharanDetailDashboard(
-          maaladharanSummary
-        )}
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="maaladharan">
+          ${renderMaaladharanDashboard(
+            maaladharanSummary
+          )}
 
+          ${renderMaaladharanDetailDashboard(
+            maaladharanSummary
+          )}
+        </section>
 
-        ${
-          hasDashboardAccess(currentMember?.role)
-            ? renderHomePoojaAdminShell()
-            : ""
-        }
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="home-pooja">
+          ${
+            hasDashboardAccess(currentMember?.role)
+              ? renderHomePoojaAdminShell()
+              : ""
+          }
+        </section>
 
-
-        ${renderMemberDirectoryShell()}
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="members">
+          ${renderMemberDirectoryShell()}
+        </section>
       `;
 
 
+      setupAdminDashboardTabs();
       setupDirectorySearch();
       setupRegisteredSwamiesSorting();
 
