@@ -920,7 +920,17 @@
       overflow: hidden;
       border: 2px solid #c79736;
       border-radius: 14px;
-      background: #050505 url("/invitation-gold-background.png") center / cover no-repeat;
+      --invitation-overlay: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.1),
+        rgba(0, 0, 0, 0.02) 38%,
+        rgba(0, 0, 0, 0.72) 72%,
+        rgba(0, 0, 0, 0.34)
+      );
+      background-color: #050505;
+      background-image: url("/invitation-gold-background.png");
+      background-position: center;
+      background-size: cover;
       box-shadow: 0 14px 34px rgba(24, 12, 0, 0.3);
       color: #fff7da;
       text-align: center;
@@ -930,15 +940,57 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0.12),
-        rgba(0, 0, 0, 0.02) 38%,
-        rgba(0, 0, 0, 0.72) 72%,
-        rgba(0, 0, 0, 0.35)
-      );
+      background: var(--invitation-overlay);
       content: "";
       pointer-events: none;
+    }
+
+    .home-pooja-invitation-preview[data-invitation-theme="maroon"] {
+      --invitation-overlay: linear-gradient(
+        180deg,
+        rgba(74, 4, 20, 0.25),
+        rgba(62, 3, 18, 0.18) 38%,
+        rgba(43, 0, 12, 0.86) 72%,
+        rgba(58, 2, 18, 0.62)
+      );
+      background-color: #3c0715;
+      background-blend-mode: screen;
+    }
+
+    .home-pooja-invitation-preview[data-invitation-theme="blue"] {
+      --invitation-overlay: linear-gradient(
+        180deg,
+        rgba(4, 20, 72, 0.26),
+        rgba(2, 13, 56, 0.2) 38%,
+        rgba(0, 8, 38, 0.88) 72%,
+        rgba(2, 16, 58, 0.65)
+      );
+      background-color: #071b4d;
+      background-blend-mode: screen;
+    }
+
+    .home-pooja-invitation-preview[data-invitation-theme="purple"] {
+      --invitation-overlay: linear-gradient(
+        180deg,
+        rgba(53, 9, 70, 0.25),
+        rgba(41, 4, 58, 0.2) 38%,
+        rgba(29, 0, 40, 0.88) 72%,
+        rgba(46, 4, 62, 0.66)
+      );
+      background-color: #321044;
+      background-blend-mode: screen;
+    }
+
+    .home-pooja-invitation-preview[data-invitation-theme="green"] {
+      --invitation-overlay: linear-gradient(
+        180deg,
+        rgba(4, 55, 38, 0.24),
+        rgba(2, 43, 29, 0.2) 38%,
+        rgba(0, 29, 19, 0.88) 72%,
+        rgba(3, 49, 33, 0.64)
+      );
+      background-color: #083d2c;
+      background-blend-mode: screen;
     }
 
     .invitation-deity-row {
@@ -1978,6 +2030,7 @@
     }
 
   </style>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 
@@ -3466,14 +3519,25 @@
             <label>Address</label>
             <textarea data-invitation-address>${escapeHtml(request.poojaAddress || "")}</textarea>
           </div>
+          <div class="form-field">
+            <label>Invitation Background</label>
+            <select data-invitation-theme>
+              <option value="black">Black &amp; Gold</option>
+              <option value="maroon">Deep Maroon &amp; Gold</option>
+              <option value="blue">Royal Blue &amp; Gold</option>
+              <option value="purple">Temple Purple &amp; Gold</option>
+              <option value="green">Emerald Green &amp; Gold</option>
+            </select>
+          </div>
         </div>
-        <div class="home-pooja-invitation-preview" data-invitation-preview>
+        <div class="home-pooja-invitation-preview" data-invitation-preview
+          data-invitation-theme="black">
           <div class="invitation-deity-row" aria-hidden="true">
             <img src="/invitation-ganesha.png" alt="">
             <img class="invitation-logo" src="/invitation-aayssa-logo.png" alt="">
             <img src="/invitation-murugan.png" alt="">
           </div>
-          <img class="invitation-ayyappa" src="/invitation-ayyappa.jpg"
+          <img class="invitation-ayyappa" src="/invitation-ayyappa.png"
             alt="Ayyappa Swamy">
           <span class="invitation-blessing">Swamiye Saranam Ayyappa</span>
           <h3>${escapeHtml(invitationTitle)}</h3>
@@ -3497,9 +3561,9 @@
         </div>
         <div class="home-pooja-invitation-actions">
           <button class="small-action-button" type="button"
-            data-action="copy-invitation">Copy Invitation</button>
+            data-action="save-invitation-image">Save as Image</button>
           <button class="small-action-button" type="button"
-            data-action="print-invitation">Print</button>
+            data-action="save-invitation-pdf">Save as PDF</button>
           <button class="small-action-button secondary-button" type="button"
             data-action="close-invitation">Close</button>
         </div>
@@ -3553,10 +3617,13 @@
 
       const name = builder.querySelector("[data-invitation-name]").value.trim();
       const address = builder.querySelector("[data-invitation-address]").value.trim();
+      const theme = builder.querySelector("[data-invitation-theme]").value;
+      const preview = builder.querySelector("[data-invitation-preview]");
       builder.querySelector("[data-invitation-host]").textContent =
         name || "Your Host";
       builder.querySelector("[data-invitation-location]").textContent =
         address || "Address to be provided";
+      preview.dataset.invitationTheme = theme;
     });
 
     section.addEventListener("click", async event => {
@@ -3617,32 +3684,52 @@
       const preview = builder.querySelector("[data-invitation-preview]");
       const message = builder.querySelector("[data-invitation-message]");
 
-      if (action === "copy-invitation") {
+      if (action === "save-invitation-image") {
+        if (typeof window.html2canvas !== "function") {
+          message.className = "inline-message error";
+          message.textContent = "The image exporter is still loading. Please try again.";
+          return;
+        }
+
+        button.disabled = true;
+        message.className = "inline-message";
+        message.textContent = "Preparing invitation image...";
+
         try {
-          await navigator.clipboard.writeText(
-            preview.innerText.replace(/\n{3,}/g, "\n\n").trim()
-          );
+          const canvas = await window.html2canvas(preview, {
+            backgroundColor: null,
+            scale: 2,
+            useCORS: true
+          });
+          const download = document.createElement("a");
+          download.download = "aayssa-invitation.png";
+          download.href = canvas.toDataURL("image/png");
+          download.click();
           message.className = "inline-message success";
-          message.textContent = "Invitation copied.";
+          message.textContent = "Invitation image saved.";
         } catch (error) {
           message.className = "inline-message error";
-          message.textContent = "Unable to copy. Please select and copy the invitation text.";
+          message.textContent = "Unable to save the invitation image.";
+        } finally {
+          button.disabled = false;
         }
         return;
       }
 
-      if (action === "print-invitation") {
+      if (action === "save-invitation-pdf") {
         const printWindow = window.open("", "_blank");
         const printTitle = preview.querySelector("h3")?.textContent ||
           "AAYSSA Invitation";
+        const invitationTheme =
+          preview.dataset.invitationTheme || "black";
 
         if (!printWindow) {
           message.className = "inline-message error";
-          message.textContent = "Please allow pop-ups to print the invitation.";
+          message.textContent = "Please allow pop-ups to save the invitation as a PDF.";
           return;
         }
 
-        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>@page{size:portrait;margin:0.25in}*{box-sizing:border-box}body{margin:0;background:#111;font-family:Arial,sans-serif}.invitation{position:relative;isolation:isolate;max-width:650px;min-height:850px;margin:auto;padding:30px;overflow:hidden;border:2px solid #c79736;background:#050505 url("/invitation-gold-background.png") center/cover no-repeat;color:#fff7da;text-align:center}.invitation:after{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.02) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.35));content:""}.invitation strong,.invitation span{display:block}.invitation-deity-row{display:grid;grid-template-columns:82px 150px 82px;align-items:center;justify-content:center;gap:18px;min-height:112px}.invitation-deity-row img{display:block;width:100%;max-height:108px;object-fit:contain}.invitation-deity-row .invitation-logo{max-height:126px}.invitation-ayyappa{display:block;width:300px;height:290px;margin:10px auto 16px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(255,217,111,.45))}.invitation h3{margin:5px 0 12px;color:#fff4bd;font:500 34px/1.2 Georgia,serif;letter-spacing:.08em;text-shadow:0 0 9px rgba(255,219,117,.75);text-transform:uppercase}.invitation-blessing,.invitation-welcome,.invitation-closing{color:#f8e9bd;font-family:Georgia,serif}.invitation-event-name{margin:8px 0;color:#ffe9a0;font:700 21px Georgia,serif;letter-spacing:.06em;text-transform:uppercase}.invitation-host{margin:10px 0;color:#fff4bd;font:700 20px Georgia,serif}.invitation-detail{margin:6px 0;font-size:17px}.invitation-address{margin:8px 0 14px;white-space:pre-line}.invitation-footer{margin-top:22px;padding-top:15px;border-top:1px solid rgba(236,197,91,.55);color:#f8e9bd;font:15px/1.5 Georgia,serif}.invitation-footer a{color:#ffe9a0;text-decoration:none}@media print{body{background:#fff}.invitation{break-inside:avoid}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>@page{size:portrait;margin:0.25in}*{box-sizing:border-box}body{margin:0;background:#111;font-family:Arial,sans-serif}.invitation{position:relative;isolation:isolate;max-width:650px;min-height:850px;margin:auto;padding:30px;overflow:hidden;border:2px solid #c79736;background:#050505 url("/invitation-gold-background.png") center/cover no-repeat;color:#fff7da;text-align:center}.invitation{--invitation-overlay:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.02) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.35))}.invitation[data-invitation-theme="maroon"]{--invitation-overlay:linear-gradient(180deg,rgba(74,4,20,.25),rgba(62,3,18,.18) 38%,rgba(43,0,12,.86) 72%,rgba(58,2,18,.62));background-color:#3c0715;background-blend-mode:screen}.invitation[data-invitation-theme="blue"]{--invitation-overlay:linear-gradient(180deg,rgba(4,20,72,.26),rgba(2,13,56,.2) 38%,rgba(0,8,38,.88) 72%,rgba(2,16,58,.65));background-color:#071b4d;background-blend-mode:screen}.invitation[data-invitation-theme="purple"]{--invitation-overlay:linear-gradient(180deg,rgba(53,9,70,.25),rgba(41,4,58,.2) 38%,rgba(29,0,40,.88) 72%,rgba(46,4,62,.66));background-color:#321044;background-blend-mode:screen}.invitation[data-invitation-theme="green"]{--invitation-overlay:linear-gradient(180deg,rgba(4,55,38,.24),rgba(2,43,29,.2) 38%,rgba(0,29,19,.88) 72%,rgba(3,49,33,.64));background-color:#083d2c;background-blend-mode:screen}.invitation:after{position:absolute;inset:0;z-index:-1;background:var(--invitation-overlay);content:""}.invitation strong,.invitation span{display:block}.invitation-deity-row{display:grid;grid-template-columns:82px 150px 82px;align-items:center;justify-content:center;gap:18px;min-height:112px}.invitation-deity-row img{display:block;width:100%;max-height:108px;object-fit:contain}.invitation-deity-row .invitation-logo{max-height:126px}.invitation-ayyappa{display:block;width:300px;height:290px;margin:10px auto 16px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(255,217,111,.45))}.invitation h3{margin:5px 0 12px;color:#fff4bd;font:500 34px/1.2 Georgia,serif;letter-spacing:.08em;text-shadow:0 0 9px rgba(255,219,117,.75);text-transform:uppercase}.invitation-blessing,.invitation-welcome,.invitation-closing{color:#f8e9bd;font-family:Georgia,serif}.invitation-event-name{margin:8px 0;color:#ffe9a0;font:700 21px Georgia,serif;letter-spacing:.06em;text-transform:uppercase}.invitation-host{margin:10px 0;color:#fff4bd;font:700 20px Georgia,serif}.invitation-detail{margin:6px 0;font-size:17px}.invitation-address{margin:8px 0 14px;white-space:pre-line}.invitation-footer{margin-top:22px;padding-top:15px;border-top:1px solid rgba(236,197,91,.55);color:#f8e9bd;font:15px/1.5 Georgia,serif}.invitation-footer a{color:#ffe9a0;text-decoration:none}@media print{body{background:#fff}.invitation{break-inside:avoid}}</style></head><body><div class="invitation" data-invitation-theme="${escapeHtml(invitationTheme)}">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
         printWindow.document.close();
       }
     });
