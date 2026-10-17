@@ -419,6 +419,17 @@ Admin dashboard donation summary:
   - `npm run migrate:volunteers:dry-run`
   - `npm run migrate:volunteers:apply`
 
+## Conversation Recovery
+
+If Xcode loses or does not display its conversation history, the user has authorized future agents to recover the missing AAYSSA context from the local Codex session transcripts before continuing work.
+
+- Xcode's Codex data root on this Mac is `/Users/sid/Library/Developer/Xcode/CodingAssistant/codex`.
+- Session transcripts are JSONL files under `/Users/sid/Library/Developer/Xcode/CodingAssistant/codex/sessions/YYYY/MM/DD/`.
+- The main historical AAYSSA implementation conversation begins at `sessions/2026/09/20/rollout-2026-09-20T22-58-58-01a0c1e7-087a-7eb0-b758-50a8e2c56bd1.jsonl`.
+- Later AAYSSA conversations can be identified by their `session_meta.payload.cwd`, project structure, or user messages mentioning `aayssa-membership-api`.
+- Extract and summarize relevant `user_message` and final `agent_message` events. Do not repeat raw tool output, environment values, access tokens, or unrelated project conversations.
+- Treat the current code, Git history, and this `AGENTS.md` as authoritative when an older transcript conflicts with the implemented state.
+
 ## Maintenance Requirement
 
-For every future feature or bug fix, update this `AGENTS.md` if the change affects architecture, auth, routes, data fields, integrations, deployment assumptions, public embeds, or user-facing portal capabilities. Treat this file as the quick-start reference for future development sessions.
+For every future feature or bug fix, update this `AGENTS.md` if the change affects architecture, auth, routes, data fields, integrations, deployment assumptions, public embeds, user-facing portal capabilities, or conversation-recovery instructions. Treat this file as the quick-start reference for future development sessions.
