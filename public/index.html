@@ -911,20 +911,77 @@
     }
 
     .home-pooja-invitation-preview {
-      margin-top: 16px;
-      padding: 28px 20px;
-      border: 2px solid #b97716;
+      position: relative;
+      isolation: isolate;
+      width: min(100%, 640px);
+      min-height: 800px;
+      margin: 16px auto 0;
+      padding: 30px 30px 24px;
+      overflow: hidden;
+      border: 2px solid #c79736;
       border-radius: 14px;
-      background: linear-gradient(145deg, #fffdf8, #fff1d2);
-      color: #4e2c0b;
+      background: #050505 url("/invitation-gold-background.png") center / cover no-repeat;
+      box-shadow: 0 14px 34px rgba(24, 12, 0, 0.3);
+      color: #fff7da;
       text-align: center;
     }
 
+    .home-pooja-invitation-preview::after {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.12),
+        rgba(0, 0, 0, 0.02) 38%,
+        rgba(0, 0, 0, 0.72) 72%,
+        rgba(0, 0, 0, 0.35)
+      );
+      content: "";
+      pointer-events: none;
+    }
+
+    .invitation-deity-row {
+      display: grid;
+      grid-template-columns: 82px minmax(110px, 150px) 82px;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      min-height: 112px;
+    }
+
+    .invitation-deity-row img {
+      display: block;
+      width: 100%;
+      max-height: 108px;
+      object-fit: contain;
+    }
+
+    .invitation-deity-row .invitation-logo {
+      max-height: 126px;
+      filter: drop-shadow(0 3px 7px rgba(255, 194, 64, 0.35));
+    }
+
+    .invitation-ayyappa {
+      display: block;
+      width: min(54%, 300px);
+      height: 290px;
+      margin: 10px auto 16px;
+      object-fit: contain;
+      object-position: center;
+      filter: drop-shadow(0 0 15px rgba(255, 217, 111, 0.45));
+    }
+
     .home-pooja-invitation-preview h3 {
-      margin: 6px 0 12px;
-      color: #8a3f12;
+      margin: 5px 0 12px;
+      color: #fff4bd;
       font-family: Georgia, serif;
-      font-size: 27px;
+      font-size: clamp(25px, 5vw, 36px);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+      text-shadow: 0 0 9px rgba(255, 219, 117, 0.75);
+      text-transform: uppercase;
     }
 
     .home-pooja-invitation-preview strong,
@@ -932,15 +989,72 @@
       display: block;
     }
 
+    .invitation-blessing,
+    .invitation-welcome,
+    .invitation-closing {
+      color: #f8e9bd;
+      font-family: Georgia, serif;
+    }
+
+    .invitation-event-name {
+      margin: 8px 0;
+      color: #ffe9a0;
+      font-family: Georgia, serif;
+      font-size: 21px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
     .home-pooja-invitation-preview .invitation-host {
-      margin: 12px 0;
-      color: #713d0d;
+      margin: 10px 0;
+      color: #fff4bd;
+      font-family: Georgia, serif;
       font-size: 20px;
+      letter-spacing: 0.04em;
+    }
+
+    .invitation-detail {
+      margin: 6px 0;
+      color: #fff7da;
+      font-size: 17px;
+      letter-spacing: 0.03em;
     }
 
     .home-pooja-invitation-preview .invitation-address {
-      margin-top: 12px;
+      margin: 8px 0 14px;
       white-space: pre-line;
+    }
+
+    .invitation-footer {
+      margin-top: 22px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(236, 197, 91, 0.55);
+      color: #f8e9bd;
+      font-family: Georgia, serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .invitation-footer a {
+      color: #ffe9a0;
+      text-decoration: none;
+    }
+
+    @media (max-width: 620px) {
+      .home-pooja-invitation-preview {
+        min-height: 720px;
+        padding: 22px 18px 20px;
+      }
+
+      .invitation-deity-row {
+        grid-template-columns: 62px minmax(90px, 120px) 62px;
+        gap: 10px;
+      }
+
+      .invitation-ayyappa {
+        width: min(68%, 260px);
+        height: 245px;
+      }
     }
 
     .home-pooja-invitation-actions {
@@ -3354,17 +3468,32 @@
           </div>
         </div>
         <div class="home-pooja-invitation-preview" data-invitation-preview>
-          <span>Swamiye Saranam Ayyappa</span>
+          <div class="invitation-deity-row" aria-hidden="true">
+            <img src="/invitation-ganesha.png" alt="">
+            <img class="invitation-logo" src="/invitation-aayssa-logo.png" alt="">
+            <img src="/invitation-murugan.png" alt="">
+          </div>
+          <img class="invitation-ayyappa" src="/invitation-ayyappa.jpg"
+            alt="Ayyappa Swamy">
+          <span class="invitation-blessing">Swamiye Saranam Ayyappa</span>
           <h3>${escapeHtml(invitationTitle)}</h3>
-          <span>You and your family are cordially invited to join us for</span>
-          <strong>${escapeHtml(invitationEvent)}</strong>
+          <span class="invitation-welcome">You and your family are cordially invited to join us for</span>
+          <strong class="invitation-event-name">${escapeHtml(invitationEvent)}</strong>
           <strong class="invitation-host" data-invitation-host>${escapeHtml(organizerName)}</strong>
-          <span>${escapeHtml(formatPortalDate(request.poojaDate))}</span>
+          <span class="invitation-detail">${escapeHtml(formatPortalDate(request.poojaDate))}</span>
           ${request.preferredTime
-            ? `<span>${escapeHtml(request.preferredTime)}</span>`
+            ? `<span class="invitation-detail">${escapeHtml(request.preferredTime)}</span>`
             : ""}
-          <span class="invitation-address" data-invitation-location>${escapeHtml(request.poojaAddress || "")}</span>
-          <span>We look forward to your presence and blessings.</span>
+          <span class="invitation-detail invitation-address"
+            data-invitation-location>${escapeHtml(request.poojaAddress || "")}</span>
+          <span class="invitation-closing">We look forward to your presence and blessings.</span>
+          <div class="invitation-footer">
+            <span>Pooja &amp; Bhajan Performed by</span>
+            <strong>Atlanta Ayyappa Seva Sangam (AAYSSA)</strong>
+            <a href="https://www.atlantaayyappasevasangam.org">
+              www.atlantaayyappasevasangam.org
+            </a>
+          </div>
         </div>
         <div class="home-pooja-invitation-actions">
           <button class="small-action-button" type="button"
@@ -3513,7 +3642,7 @@
           return;
         }
 
-        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>body{font-family:Arial,sans-serif;padding:32px;color:#4e2c0b}.invitation{max-width:650px;margin:auto;padding:48px 32px;border:3px solid #b97716;border-radius:18px;background:#fff8e8;text-align:center;line-height:1.7}.invitation h3{font-family:Georgia,serif;font-size:34px;color:#8a3f12;margin:8px 0 18px}.invitation strong,.invitation span{display:block}.invitation-host{font-size:24px;color:#713d0d;margin:14px 0}.invitation-address{margin:14px 0;white-space:pre-line}@media print{body{padding:0}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>@page{size:portrait;margin:0.25in}*{box-sizing:border-box}body{margin:0;background:#111;font-family:Arial,sans-serif}.invitation{position:relative;isolation:isolate;max-width:650px;min-height:850px;margin:auto;padding:30px;overflow:hidden;border:2px solid #c79736;background:#050505 url("/invitation-gold-background.png") center/cover no-repeat;color:#fff7da;text-align:center}.invitation:after{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.02) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.35));content:""}.invitation strong,.invitation span{display:block}.invitation-deity-row{display:grid;grid-template-columns:82px 150px 82px;align-items:center;justify-content:center;gap:18px;min-height:112px}.invitation-deity-row img{display:block;width:100%;max-height:108px;object-fit:contain}.invitation-deity-row .invitation-logo{max-height:126px}.invitation-ayyappa{display:block;width:300px;height:290px;margin:10px auto 16px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(255,217,111,.45))}.invitation h3{margin:5px 0 12px;color:#fff4bd;font:500 34px/1.2 Georgia,serif;letter-spacing:.08em;text-shadow:0 0 9px rgba(255,219,117,.75);text-transform:uppercase}.invitation-blessing,.invitation-welcome,.invitation-closing{color:#f8e9bd;font-family:Georgia,serif}.invitation-event-name{margin:8px 0;color:#ffe9a0;font:700 21px Georgia,serif;letter-spacing:.06em;text-transform:uppercase}.invitation-host{margin:10px 0;color:#fff4bd;font:700 20px Georgia,serif}.invitation-detail{margin:6px 0;font-size:17px}.invitation-address{margin:8px 0 14px;white-space:pre-line}.invitation-footer{margin-top:22px;padding-top:15px;border-top:1px solid rgba(236,197,91,.55);color:#f8e9bd;font:15px/1.5 Georgia,serif}.invitation-footer a{color:#ffe9a0;text-decoration:none}@media print{body{background:#fff}.invitation{break-inside:avoid}}</style></head><body><div class="invitation">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
         printWindow.document.close();
       }
     });
@@ -5755,6 +5884,10 @@
                           type="button" data-action="edit-booking">
                           Edit Booking
                         </button>
+                        <button class="small-action-button"
+                          type="button" data-action="open-invitation">
+                          Create Invitation
+                        </button>
                         <button class="danger-button" type="button"
                           data-action="cancel-booking">
                           Cancel Booking
@@ -5779,6 +5912,7 @@
                             type="button" data-action="cancel-booking-edit">Cancel</button>
                         </div>
                       </form>
+                      ${renderHomePoojaInvitationBuilder(item)}
                     `
                     : ""
                   }
