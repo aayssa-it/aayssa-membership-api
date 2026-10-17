@@ -1226,6 +1226,17 @@
       display: none;
     }
 
+    .maaladharan-report-stack {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    .maaladharan-report-stack > .trend-card {
+      width: 100%;
+      margin-top: 0;
+    }
+
     .dashboard-row {
       display: flex;
       justify-content: space-between;
@@ -6008,6 +6019,13 @@
   ) {
 
     return `
+      <div class="maaladharan-report-stack">
+      ${renderMaaladharanOverallStats(summary?.overallStats)}
+
+      ${renderRegisteredSwamies(
+        summary?.registeredSwamies
+      )}
+
       ${renderCountChart({
         title: "Swamies by Padi Count",
         subtitle:
@@ -6019,30 +6037,16 @@
         emptyMessage:
           "No Maaladharan registrations are available yet."
       })}
-    `;
-  }
 
-
-  function renderMaaladharanDetailDashboard(
-    summary
-  ) {
-    return `
-      <div class="dashboard-grid maaladharan-dashboard-grid">
-        ${renderMaaladharanOverallStats(summary?.overallStats)}
-
-        ${renderCountChart({
-          title: "Swamies by Maaladharan Date",
-          subtitle:
-            "2026–27 Mandalam planned Maaladharan dates",
-          items:
-            summary?.dateCounts,
-          emptyMessage:
-            "No Maaladharan dates are available yet."
-        })}
-
-        ${renderRegisteredSwamies(
-          summary?.registeredSwamies
-        )}
+      ${renderCountChart({
+        title: "Swamies by Maaladharan Date",
+        subtitle:
+          "2026–27 Mandalam planned Maaladharan dates",
+        items:
+          summary?.dateCounts,
+        emptyMessage:
+          "No Maaladharan dates are available yet."
+      })}
       </div>
     `;
   }
@@ -7835,10 +7839,6 @@
         <section class="admin-dashboard-panel" hidden
           data-admin-dashboard-panel="maaladharan">
           ${renderMaaladharanDashboard(
-            maaladharanSummary
-          )}
-
-          ${renderMaaladharanDetailDashboard(
             maaladharanSummary
           )}
         </section>

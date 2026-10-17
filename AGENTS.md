@@ -325,11 +325,10 @@ Board/Admin dashboard includes:
 - Volunteer participation, including total volunteers.
 - Monthly donations chart from Zeffy.
 - Registration trends chart.
-- A full-width 2026-27 Maaladharan Padi-count chart.
-- An Overall Maaladharan Status table showing total registrations, Primary/Spouse/Additional Member, Kanni/Non-Kanni, Tampa Yatra selected/not selected, and adult/under-18 totals.
+- The Maaladharan tab presents four full-width cards in this order: Overall Maaladharan Status, Registered Swamies, Swamies by Padi Count, and Swamies by Maaladharan Date.
+- Overall Maaladharan Status shows total registrations, Primary/Spouse/Additional Member, Kanni/Non-Kanni, Tampa Yatra selected/not selected, and adult/under-18 totals.
 - Monthly donations and registration trends display the latest six months side by side without a forced horizontal scroll.
-- A second Maaladharan row has the date chart and a sortable registered-Swamies table showing name, Padi count, age, and Maaladharan date.
-- The dashboard Registered Swamies card heading shows the total number of registered Swamies.
+- Registered Swamies is a sortable table showing name, Padi count, age, and Maaladharan date; its heading shows the total number of registered Swamies.
 - Member directory with search, pagination, and sorting.
 - Board/Admin Home Pooja booking review without an approval step.
 - Home Pooja Bookings and Administration Blocks are collapsed dropdown panels in the administration dashboard, with item counts in their headings.
