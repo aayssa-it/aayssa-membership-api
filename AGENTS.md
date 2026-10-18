@@ -358,6 +358,10 @@ Registration supports:
 It posts to:
 `https://aayssa-membership-api.vercel.app/api/register`
 
+## GoDaddy Member Portal Embed
+
+`public/member-portal-godaddy-embed.html` is a copy-ready GoDaddy Custom HTML block that embeds the full portal from `https://portal.atlantaayyappasevasangam.org/?embed=1`. Embedded mode hides the portal's duplicate website header, reduces outer spacing, and sends safe height-only `postMessage` updates so the parent iframe can resize without persistent internal scrolling. The parent snippet accepts messages only from the portal origin. When no session exists, embedded mode redirects within the iframe to `login-embed.html?portalEmbed=1`; successful authentication then returns to `/?embed=1` inside the same iframe rather than navigating the GoDaddy page away. The standalone portal remains unchanged when `embed=1` is absent. Test sign-in and session persistence in Safari, Chrome, and mobile browsers before replacing the existing Member Login page.
+
 ## Public Login Embed
 
 `public/login-embed.html` is intended for GoDaddy.

@@ -267,6 +267,9 @@
 
   const API_BASE =
     "https://portal.atlantaayyappasevasangam.org/api";
+  const isPortalEmbed =
+    new URLSearchParams(window.location.search)
+      .get("portalEmbed") === "1";
 
   const loginForm = document.getElementById("memberLoginForm");
   const codeForm = document.getElementById("memberCodeForm");
@@ -397,9 +400,13 @@
         );
       }
 
-      window.top.location.href =
-        data.redirectUrl ||
-        "https://portal.atlantaayyappasevasangam.org/";
+      if (isPortalEmbed) {
+        window.location.href = "/?embed=1";
+      } else {
+        window.top.location.href =
+          data.redirectUrl ||
+          "https://portal.atlantaayyappasevasangam.org/";
+      }
 
     } catch (error) {
 
@@ -451,8 +458,12 @@
       );
 
       if (response.ok) {
-        window.top.location.href =
-          "https://portal.atlantaayyappasevasangam.org/";
+        if (isPortalEmbed) {
+          window.location.href = "/?embed=1";
+        } else {
+          window.top.location.href =
+            "https://portal.atlantaayyappasevasangam.org/";
+        }
       }
     } catch (error) {
       console.info(

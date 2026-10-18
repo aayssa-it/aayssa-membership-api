@@ -1,0 +1,46 @@
+<!--
+  Copy this entire block into a GoDaddy Custom HTML section.
+  The iframe keeps the portal on its own secure domain while matching the
+  available GoDaddy content width.
+-->
+<div id="aayssa-member-portal-embed" style="width:100%;max-width:1600px;margin:0 auto;">
+  <iframe
+    id="aayssa-member-portal-frame"
+    title="AAYSSA Member Portal"
+    src="https://portal.atlantaayyappasevasangam.org/?embed=1"
+    style="display:block;width:100%;height:900px;border:0;background:#f7f6f3;"
+    loading="eager"
+    allow="clipboard-write"
+  ></iframe>
+  <noscript>
+    <p>
+      <a href="https://portal.atlantaayyappasevasangam.org/" target="_top">
+        Open the AAYSSA Member Portal
+      </a>
+    </p>
+  </noscript>
+</div>
+
+<script>
+  (function () {
+    var portalOrigin = "https://portal.atlantaayyappasevasangam.org";
+    var frame = document.getElementById("aayssa-member-portal-frame");
+
+    window.addEventListener("message", function (event) {
+      if (
+        event.origin !== portalOrigin ||
+        event.source !== frame.contentWindow ||
+        !event.data ||
+        event.data.type !== "aayssa-portal-height"
+      ) {
+        return;
+      }
+
+      var height = Number(event.data.height);
+
+      if (Number.isFinite(height) && height >= 500 && height <= 20000) {
+        frame.style.height = Math.ceil(height) + "px";
+      }
+    });
+  }());
+</script>

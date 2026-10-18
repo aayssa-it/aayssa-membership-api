@@ -7,6 +7,12 @@
 
   <title>AAYSSA Member Portal</title>
 
+  <script>
+    if (new URLSearchParams(window.location.search).get("embed") === "1") {
+      document.documentElement.classList.add("portal-embedded");
+    }
+  </script>
+
   <style>
 
     * {
@@ -22,6 +28,27 @@
       font-family: Arial, Helvetica, sans-serif;
       background: #f7f6f3;
       color: #222;
+    }
+
+    .portal-embedded .site-header {
+      display: none;
+    }
+
+    .portal-embedded .portal-heading {
+      padding: 34px 20px 26px;
+    }
+
+    .portal-embedded .portal-heading h1 {
+      font-size: clamp(34px, 6vw, 48px);
+    }
+
+    .portal-embedded .heading-divider {
+      margin: 22px auto 18px;
+    }
+
+    .portal-embedded .page {
+      padding-top: 26px;
+      padding-bottom: 28px;
     }
 
 
@@ -3869,33 +3896,40 @@
             )
           );
 
-          const captureWidth = preview.offsetWidth;
-          const captureHeight = preview.scrollHeight;
+          const captureWidth = preview.getBoundingClientRect().width;
           const canvas = await window.html2canvas(preview, {
             backgroundColor: null,
-            foreignObjectRendering: true,
-            height: captureHeight,
+            imageTimeout: 15000,
+            logging: false,
             scale: 2,
+            scrollX: 0,
+            scrollY: -window.scrollY,
             useCORS: true,
-            width: captureWidth,
-            windowHeight: captureHeight,
-            windowWidth: captureWidth,
             onclone: clonedDocument => {
               const clonedPreview =
                 clonedDocument.querySelector("[data-invitation-preview]");
               if (clonedPreview) {
                 clonedPreview.style.width = `${captureWidth}px`;
                 clonedPreview.style.maxWidth = "none";
-                clonedPreview.style.height = `${captureHeight}px`;
-                clonedPreview.style.minHeight = "0";
                 clonedPreview.style.margin = "0";
               }
             }
           });
+
+          const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob(
+              value => value ? resolve(value) : reject(new Error("Empty invitation image.")),
+              "image/png"
+            );
+          });
+          const imageUrl = URL.createObjectURL(blob);
           const download = document.createElement("a");
           download.download = "aayssa-invitation.png";
-          download.href = canvas.toDataURL("image/png");
+          download.href = imageUrl;
+          document.body.appendChild(download);
           download.click();
+          download.remove();
+          setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
           message.className = "inline-message success";
           message.textContent = "Invitation image saved.";
         } catch (error) {
@@ -7843,6 +7877,11 @@
         response.status === 401
       ) {
 
+        if (document.documentElement.classList.contains("portal-embedded")) {
+          window.location.replace("/login-embed.html?portalEmbed=1");
+          return;
+        }
+
         status.className =
           "message";
 
@@ -8756,6 +8795,38 @@
   /* =====================================================
      START PORTAL
      ===================================================== */
+
+  if (document.documentElement.classList.contains("portal-embedded")) {
+    let lastReportedHeight = 0;
+    let resizeFrame = 0;
+
+    const reportEmbeddedHeight = () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(() => {
+        const height = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight
+        );
+
+        if (Math.abs(height - lastReportedHeight) < 2) {
+          return;
+        }
+
+        lastReportedHeight = height;
+        window.parent.postMessage(
+          {
+            type: "aayssa-portal-height",
+            height
+          },
+          "*"
+        );
+      });
+    };
+
+    new ResizeObserver(reportEmbeddedHeight)
+      .observe(document.body);
+    window.addEventListener("load", reportEmbeddedHeight);
+  }
 
   loadMember();
 
