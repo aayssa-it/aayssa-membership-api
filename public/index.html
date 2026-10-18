@@ -1537,6 +1537,172 @@
       display: none;
     }
 
+    .capacity-monitor-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .capacity-monitor-header h3 {
+      margin: 0 0 4px;
+    }
+
+    .capacity-monitor-header p {
+      margin: 0;
+      color: #6f655a;
+      font-size: 14px;
+    }
+
+    .capacity-refresh {
+      width: auto;
+      margin: 0;
+      padding: 9px 16px;
+    }
+
+    .capacity-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid #d8e8dc;
+      border-radius: 10px;
+      background: #f0faf2;
+      color: #285d34;
+      font-weight: 700;
+    }
+
+    .capacity-summary.warning {
+      border-color: #efd69d;
+      background: #fff8e6;
+      color: #7a5300;
+    }
+
+    .capacity-summary.critical {
+      border-color: #efb4b4;
+      background: #fff0f0;
+      color: #8b1e1e;
+    }
+
+    .capacity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    .capacity-card {
+      padding: 16px;
+      border: 1px solid #e5ddd3;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .capacity-card.warning {
+      border-color: #e8c675;
+      background: #fffbef;
+    }
+
+    .capacity-card.critical,
+    .capacity-card.error {
+      border-color: #e4a3a3;
+      background: #fff5f5;
+    }
+
+    .capacity-card.manual {
+      border-color: #b7cbe2;
+      background: #f5f9fd;
+    }
+
+    .capacity-card-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .capacity-card-heading strong {
+      display: block;
+      color: #372414;
+    }
+
+    .capacity-card-heading small {
+      color: #796f66;
+    }
+
+    .capacity-status {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #e7f5ea;
+      color: #246134;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .capacity-card.warning .capacity-status {
+      background: #ffe9ad;
+      color: #795100;
+    }
+
+    .capacity-card.critical .capacity-status,
+    .capacity-card.error .capacity-status {
+      background: #ffd5d5;
+      color: #8d2020;
+    }
+
+    .capacity-card.manual .capacity-status {
+      background: #dceaf7;
+      color: #315d85;
+    }
+
+    .capacity-progress {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #ece7e1;
+    }
+
+    .capacity-progress span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: #399451;
+    }
+
+    .capacity-card.warning .capacity-progress span {
+      background: #d49b13;
+    }
+
+    .capacity-card.critical .capacity-progress span {
+      background: #c83d3d;
+    }
+
+    .capacity-usage {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      color: #5f554c;
+      font-size: 13px;
+    }
+
+    .capacity-detail {
+      margin: 8px 0 0;
+      color: #665d55;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .capacity-note {
+      margin: 16px 0 0;
+      color: #776b60;
+      font-size: 13px;
+    }
+
     .maaladharan-report-stack {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
@@ -3696,10 +3862,35 @@
         message.textContent = "Preparing invitation image...";
 
         try {
+          await document.fonts?.ready;
+          await Promise.all(
+            Array.from(preview.querySelectorAll("img")).map(image =>
+              image.decode?.().catch(() => undefined)
+            )
+          );
+
+          const captureWidth = preview.offsetWidth;
+          const captureHeight = preview.scrollHeight;
           const canvas = await window.html2canvas(preview, {
             backgroundColor: null,
+            foreignObjectRendering: true,
+            height: captureHeight,
             scale: 2,
-            useCORS: true
+            useCORS: true,
+            width: captureWidth,
+            windowHeight: captureHeight,
+            windowWidth: captureWidth,
+            onclone: clonedDocument => {
+              const clonedPreview =
+                clonedDocument.querySelector("[data-invitation-preview]");
+              if (clonedPreview) {
+                clonedPreview.style.width = `${captureWidth}px`;
+                clonedPreview.style.maxWidth = "none";
+                clonedPreview.style.height = `${captureHeight}px`;
+                clonedPreview.style.minHeight = "0";
+                clonedPreview.style.margin = "0";
+              }
+            }
           });
           const download = document.createElement("a");
           download.download = "aayssa-invitation.png";
@@ -8000,12 +8191,132 @@
 
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
-        selectPanel(tab.dataset.adminDashboardTab);
+        const target = tab.dataset.adminDashboardTab;
+        selectPanel(target);
+
+        if (target === "capacity") {
+          loadCapacityMonitor();
+        }
       });
     });
 
     selectPanel("overview");
   }
+
+  let capacityMonitorLoaded = false;
+
+  async function loadCapacityMonitor(force = false) {
+    const container = document.getElementById("capacityMonitorContent");
+
+    if (!container || (capacityMonitorLoaded && !force)) {
+      return;
+    }
+
+    container.innerHTML = '<div class="dashboard-loading">Checking current service usage…</div>';
+
+    try {
+      const response = await fetch(
+        "/api/admin-stats?resource=capacity-dashboard",
+        {
+          method: "GET",
+          credentials: "include"
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to load capacity statistics.");
+      }
+
+      const capacity = data.capacity || {};
+      const checks = Array.isArray(capacity.checks) ? capacity.checks : [];
+      const severity = ["warning", "critical"].includes(capacity.severity)
+        ? capacity.severity
+        : "ok";
+      const summary = severity === "critical"
+        ? "One or more services need immediate attention."
+        : severity === "warning"
+          ? "One or more services are approaching a configured limit."
+          : "All automatically measured services are within their configured thresholds.";
+
+      container.innerHTML = `
+        <div class="capacity-monitor-header">
+          <div>
+            <h3>Free-Tier Capacity Monitor</h3>
+            <p>Last checked ${escapeHtml(formatCapacityCheckedAt(capacity.checkedAt))}</p>
+          </div>
+          <button class="secondary-button capacity-refresh" type="button"
+            id="capacityRefreshButton">Refresh now</button>
+        </div>
+        <div class="capacity-summary ${severity}">
+          <span aria-hidden="true">${severity === "ok" ? "✓" : "⚠"}</span>
+          <span>${escapeHtml(summary)}</span>
+        </div>
+        <div class="capacity-grid">
+          ${checks.map(renderCapacityCheck).join("")}
+        </div>
+        <p class="capacity-note">
+          Warning threshold: ${Number(capacity.thresholds?.warning || 70)}%.
+          Critical threshold: ${Number(capacity.thresholds?.critical || 90)}%.
+          Dashboard-only items are shown as Manual Check and are not estimated.
+        </p>
+      `;
+
+      capacityMonitorLoaded = true;
+      document.getElementById("capacityRefreshButton")
+        ?.addEventListener("click", () => loadCapacityMonitor(true));
+    } catch (error) {
+      container.innerHTML = `
+        <div class="directory-empty error">
+          ${escapeHtml(error?.message || "Unable to load capacity statistics.")}
+        </div>
+      `;
+    }
+  }
+
+  function renderCapacityCheck(check) {
+    const status = ["ok", "warning", "critical", "error", "manual"].includes(check?.status)
+      ? check.status
+      : "manual";
+    const hasUsage = Number.isFinite(Number(check?.percent));
+    const percent = hasUsage
+      ? Math.max(0, Math.min(100, Number(check.percent)))
+      : 0;
+    const label = status === "manual" ? "Manual Check" : status;
+
+    return `
+      <article class="capacity-card ${status}">
+        <div class="capacity-card-heading">
+          <div>
+            <strong>${escapeHtml(check?.provider || "Service")}</strong>
+            <small>${escapeHtml(check?.metric || "Capacity")}</small>
+          </div>
+          <span class="capacity-status">${escapeHtml(label)}</span>
+        </div>
+        ${hasUsage ? `
+          <div class="capacity-progress" role="progressbar"
+            aria-label="${escapeHtml(check?.provider || "Service")} ${escapeHtml(check?.metric || "Capacity")}"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+            <span style="width:${percent}%"></span>
+          </div>
+          <div class="capacity-usage">
+            <span>${Number(check.used).toLocaleString()} of ${Number(check.limit).toLocaleString()}</span>
+            <strong>${percent.toFixed(1)}%</strong>
+          </div>
+        ` : `
+          <p class="capacity-detail">${escapeHtml(check?.detail || "Usage details unavailable.")}</p>
+        `}
+      </article>
+    `;
+  }
+
+  function formatCapacityCheckedAt(value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? "just now"
+      : date.toLocaleString();
+  }
+
 
   async function loadDashboardStats() {
 
@@ -8106,6 +8417,10 @@
           <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="members" aria-selected="false">
             Member Directory
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="capacity" aria-selected="false">
+            Capacity Monitor
           </button>
         </div>
 
@@ -8324,6 +8639,15 @@
         <section class="admin-dashboard-panel" hidden
           data-admin-dashboard-panel="members">
           ${renderMemberDirectoryShell()}
+        </section>
+
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="capacity">
+          <div class="dashboard-card full-width" id="capacityMonitorContent">
+            <div class="dashboard-loading">
+              Open this tab to check current service usage.
+            </div>
+          </div>
         </section>
       `;
 

@@ -12,6 +12,10 @@ import {
 import {
   handleRsvpReminders
 } from "./_lib/rsvp.js";
+import {
+  getCapacitySnapshot,
+  handleCapacityMonitor
+} from "./_lib/capacity-monitor.js";
 
 const ZEFFY_API_BASE_URL =
   "https://api.zeffy.com/api/v1";
@@ -27,6 +31,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "rsvp-reminders") {
     return handleRsvpReminders(req, res);
+  }
+
+  if (req.query?.resource === "capacity-monitor") {
+    return handleCapacityMonitor(req, res);
   }
 
   if (req.method !== "GET") {
@@ -192,6 +200,16 @@ export default async function handler(req, res) {
         success: false,
         message:
           "Board or administrator access required."
+      });
+    }
+
+
+    if (req.query?.resource === "capacity-dashboard") {
+      const capacity = await getCapacitySnapshot();
+
+      return res.status(200).json({
+        success: true,
+        capacity
       });
     }
 

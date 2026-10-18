@@ -8,6 +8,10 @@
     {
       "path": "/api/admin-stats?resource=rsvp-reminders",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/admin-stats?resource=capacity-monitor",
+      "schedule": "0 14 * * *"
     }
   ]
 }

@@ -419,6 +419,30 @@ Admin dashboard donation summary:
   - `npm run migrate:volunteers:dry-run`
   - `npm run migrate:volunteers:apply`
 
+## Weekly Free-Tier Capacity Check
+
+The application intentionally uses the free tiers of Vercel, Baserow Cloud, Resend, and Supabase. At the beginning of an AAYSSA work session, if seven or more days have elapsed since the date below, perform a read-only capacity check and alert the user about anything needing attention. Do not print or expose credentials while checking usage.
+
+Last capacity check: `2026-10-17`
+
+Baseline recorded on that date:
+- Baserow: 314 total rows across the six application tables, 10.5% of the 3,000-row workspace allowance, leaving 2,686 rows.
+- Vercel: 12 API routes and two cron jobs. The daily and weekly schedules comply with the Hobby once-per-day minimum interval.
+- Resend: account usage could not be queried from the local checkout because no local API key was available. Check the Resend Usage page or read-only Usage API when credentials are available.
+- Supabase: current dashboard usage could not be queried from the local checkout. Verify the Usage page and confirm that production OTP delivery uses custom SMTP rather than the restricted built-in SMTP service.
+- Vercel Hobby is restricted to personal/non-commercial use. Periodically confirm with Vercel that the nonprofit portal remains eligible.
+
+Weekly checks and alert thresholds:
+- Baserow: total every accessible table; alert at 2,100 rows (70%), escalate at 2,400 (80%), and do not approach 2,700 without an archive, paid plan, or self-hosting plan.
+- Resend: daily and monthly transactional usage; alert at 70 emails/day or 2,100/month and escalate at 90/day or 2,700/month.
+- Supabase: MAU, database size, egress, project-pause state, Auth rate-limit errors, and custom SMTP status. Alert on any production use of built-in SMTP, usage above 70%, or project-pause warning.
+- Vercel: function invocations, execution, transfer, deployment failures, and cron health. Alert above 70% of any included allowance, on missed cron runs, or if Hobby-plan eligibility is uncertain.
+- The daily `admin-stats?resource=capacity-monitor` cron runs at 14:00 UTC without adding an API route. It measures Baserow workspace rows and Resend daily/monthly email usage, verifies Supabase Auth reachability, and emails `CAPACITY_ALERT_EMAIL` (default `aayssa.official@gmail.com`) when a measured limit reaches the warning or critical threshold. Warning alerts are deduplicated monthly and critical alerts daily through Resend idempotency keys.
+- Board/Admin users have a Capacity Monitor tab under Administration. It loads the same safe snapshot through authenticated `GET /api/admin-stats?resource=capacity-dashboard`, displays measured usage and thresholds, identifies dashboard-only checks, and supports a manual refresh without sending an alert email.
+- Optional monitor settings are `CAPACITY_ALERT_EMAIL`, `CAPACITY_WARNING_PERCENT` (default 70), `CAPACITY_CRITICAL_PERCENT` (default 90), and `BASEROW_FREE_ROW_LIMIT` (default 3000). `CRON_SECRET`, Resend, Baserow, and Supabase variables must remain configured for the monitor.
+- Vercel Hobby capacity percentages and Supabase quota percentages remain dashboard-only; the monitor reports this limitation and relies on their provider alerts rather than guessing values.
+- Update the date and baseline figures in this section after each completed check. If dashboard-only figures cannot be accessed, tell the user exactly which dashboard values remain unverified.
+
 ## Conversation Recovery
 
 If Xcode loses or does not display its conversation history, the user has authorized future agents to recover the missing AAYSSA context from the local Codex session transcripts before continuing work.
