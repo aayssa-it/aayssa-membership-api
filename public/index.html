@@ -3940,15 +3940,13 @@
             }
           });
 
-          const blob = await new Promise((resolve, reject) => {
-            canvas.toBlob(
-              value => value ? resolve(value) : reject(new Error("Empty invitation image.")),
-              "image/png"
-            );
-          });
-          const imageUrl = URL.createObjectURL(blob);
-
           if (imageSaveWindow) {
+            const imageDataUrl = canvas.toDataURL("image/png");
+
+            if (!imageDataUrl.startsWith("data:image/png")) {
+              throw new Error("Empty invitation image.");
+            }
+
             imageSaveWindow.document.open();
             imageSaveWindow.document.write(`
               <!doctype html>
@@ -3966,20 +3964,30 @@
                 </style>
               </head>
               <body>
-                <a href="${imageUrl}" download="aayssa-invitation.png">
+                <a id="invitationDownload" download="aayssa-invitation.png">
                   Download Invitation Image
                 </a>
                 <p>On iPhone or iPad, touch and hold the image to save it.</p>
-                <img src="${imageUrl}" alt="AAYSSA invitation">
+                <img id="invitationImage" alt="AAYSSA invitation">
               </body>
               </html>
             `);
             imageSaveWindow.document.close();
-            setTimeout(() => URL.revokeObjectURL(imageUrl), 600000);
+            imageSaveWindow.document
+              .getElementById("invitationDownload").href = imageDataUrl;
+            imageSaveWindow.document
+              .getElementById("invitationImage").src = imageDataUrl;
             message.className = "inline-message success";
             message.textContent =
               "Invitation image opened. Use Download Invitation Image in the new tab.";
           } else {
+            const blob = await new Promise((resolve, reject) => {
+              canvas.toBlob(
+                value => value ? resolve(value) : reject(new Error("Empty invitation image.")),
+                "image/png"
+              );
+            });
+            const imageUrl = URL.createObjectURL(blob);
             const download = document.createElement("a");
             download.download = "aayssa-invitation.png";
             download.href = imageUrl;
@@ -6612,11 +6620,34 @@
         if (button.dataset.action === "cancel-booking") {
           const row = button.closest("[data-home-pooja-id]");
 
-          if (!window.confirm(
-            "Cancel this Home Pooja booking and return the date to availability?"
-          )) {
+          if (!row) {
             return;
           }
+
+          if (button.dataset.confirming !== "true") {
+            button.dataset.confirming = "true";
+            button.textContent = "Confirm Cancel Booking";
+            button.setAttribute(
+              "aria-label",
+              "Confirm cancellation and return this date to availability"
+            );
+
+            setTimeout(() => {
+              if (
+                button.isConnected &&
+                button.dataset.confirming === "true"
+              ) {
+                delete button.dataset.confirming;
+                button.textContent = "Cancel Booking";
+                button.removeAttribute("aria-label");
+              }
+            }, 10000);
+            return;
+          }
+
+          delete button.dataset.confirming;
+          button.textContent = "Cancelling…";
+          button.disabled = true;
 
           await submitHomePoojaAdminAction(
             "PATCH",
@@ -6627,6 +6658,12 @@
                 "Booking cancelled by Board/Admin"
             }
           );
+
+          if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Cancel Booking";
+            button.removeAttribute("aria-label");
+          }
           return;
         }
 
