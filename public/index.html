@@ -6721,11 +6721,34 @@
           const poojaDate =
             button.dataset.poojaDate;
 
-          if (!window.confirm(
-            "Make this date available for Home Pooja booking?"
-          )) {
+          if (!poojaDate) {
             return;
           }
+
+          if (button.dataset.confirming !== "true") {
+            button.dataset.confirming = "true";
+            button.textContent = "Confirm Unblock";
+            button.setAttribute(
+              "aria-label",
+              "Confirm unblock and make this date available"
+            );
+
+            setTimeout(() => {
+              if (
+                button.isConnected &&
+                button.dataset.confirming === "true"
+              ) {
+                delete button.dataset.confirming;
+                button.textContent = "Unblock";
+                button.removeAttribute("aria-label");
+              }
+            }, 10000);
+            return;
+          }
+
+          delete button.dataset.confirming;
+          button.textContent = "Unblocking…";
+          button.disabled = true;
 
           await submitHomePoojaAdminAction(
             "PATCH",
@@ -6735,6 +6758,11 @@
             }
           );
 
+          if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Unblock";
+            button.removeAttribute("aria-label");
+          }
           return;
         }
 
