@@ -1043,7 +1043,8 @@
 
     .invitation-ayyappa {
       display: block;
-      width: min(54%, 300px);
+      width: auto;
+      max-width: 54%;
       height: 290px;
       margin: 10px auto 16px;
       object-fit: contain;
@@ -1131,7 +1132,8 @@
       }
 
       .invitation-ayyappa {
-        width: min(68%, 260px);
+        width: auto;
+        max-width: 68%;
         height: 245px;
       }
     }
@@ -3731,7 +3733,7 @@
             <img src="/invitation-murugan.png" alt="">
           </div>
           <img class="invitation-ayyappa" src="/invitation-ayyappa.png"
-            alt="Ayyappa Swamy">
+            width="1086" height="1448" alt="Ayyappa Swamy">
           <span class="invitation-blessing">Swamiye Saranam Ayyappa</span>
           <h3>${escapeHtml(invitationTitle)}</h3>
           <span class="invitation-welcome">You and your family are cordially invited to join us for</span>
@@ -3954,7 +3956,7 @@
           return;
         }
 
-        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>@page{size:portrait;margin:0.25in}*{box-sizing:border-box}body{margin:0;background:#111;font-family:Arial,sans-serif}.invitation{position:relative;isolation:isolate;max-width:650px;min-height:850px;margin:auto;padding:30px;overflow:hidden;border:2px solid #c79736;background:#050505 url("/invitation-gold-background.png") center/cover no-repeat;color:#fff7da;text-align:center}.invitation{--invitation-overlay:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.02) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.35))}.invitation[data-invitation-theme="maroon"]{--invitation-overlay:linear-gradient(180deg,rgba(74,4,20,.25),rgba(62,3,18,.18) 38%,rgba(43,0,12,.86) 72%,rgba(58,2,18,.62));background-color:#3c0715;background-blend-mode:screen}.invitation[data-invitation-theme="blue"]{--invitation-overlay:linear-gradient(180deg,rgba(4,20,72,.26),rgba(2,13,56,.2) 38%,rgba(0,8,38,.88) 72%,rgba(2,16,58,.65));background-color:#071b4d;background-blend-mode:screen}.invitation[data-invitation-theme="purple"]{--invitation-overlay:linear-gradient(180deg,rgba(53,9,70,.25),rgba(41,4,58,.2) 38%,rgba(29,0,40,.88) 72%,rgba(46,4,62,.66));background-color:#321044;background-blend-mode:screen}.invitation[data-invitation-theme="green"]{--invitation-overlay:linear-gradient(180deg,rgba(4,55,38,.24),rgba(2,43,29,.2) 38%,rgba(0,29,19,.88) 72%,rgba(3,49,33,.64));background-color:#083d2c;background-blend-mode:screen}.invitation:after{position:absolute;inset:0;z-index:-1;background:var(--invitation-overlay);content:""}.invitation strong,.invitation span{display:block}.invitation-deity-row{display:grid;grid-template-columns:82px 150px 82px;align-items:center;justify-content:center;gap:18px;min-height:112px}.invitation-deity-row img{display:block;width:100%;max-height:108px;object-fit:contain}.invitation-deity-row .invitation-logo{max-height:126px}.invitation-ayyappa{display:block;width:300px;height:290px;margin:10px auto 16px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(255,217,111,.45))}.invitation h3{margin:5px 0 12px;color:#fff4bd;font:500 34px/1.2 Georgia,serif;letter-spacing:.08em;text-shadow:0 0 9px rgba(255,219,117,.75);text-transform:uppercase}.invitation-blessing,.invitation-welcome,.invitation-closing{color:#f8e9bd;font-family:Georgia,serif}.invitation-event-name{margin:8px 0;color:#ffe9a0;font:700 21px Georgia,serif;letter-spacing:.06em;text-transform:uppercase}.invitation-host{margin:10px 0;color:#fff4bd;font:700 20px Georgia,serif}.invitation-detail{margin:6px 0;font-size:17px}.invitation-address{margin:8px 0 14px;white-space:pre-line}.invitation-footer{margin-top:22px;padding-top:15px;border-top:1px solid rgba(236,197,91,.55);color:#f8e9bd;font:15px/1.5 Georgia,serif}.invitation-footer a{color:#ffe9a0;text-decoration:none}@media print{body{background:#fff}.invitation{break-inside:avoid}}</style></head><body><div class="invitation" data-invitation-theme="${escapeHtml(invitationTheme)}">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
+        printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(printTitle)}</title><style>@page{size:portrait;margin:0.25in}*{box-sizing:border-box}body{margin:0;background:#111;font-family:Arial,sans-serif}.invitation{position:relative;isolation:isolate;max-width:650px;min-height:850px;margin:auto;padding:30px;overflow:hidden;border:2px solid #c79736;background:#050505 url("/invitation-gold-background.png") center/cover no-repeat;color:#fff7da;text-align:center}.invitation{--invitation-overlay:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.02) 38%,rgba(0,0,0,.72) 72%,rgba(0,0,0,.35))}.invitation[data-invitation-theme="maroon"]{--invitation-overlay:linear-gradient(180deg,rgba(74,4,20,.25),rgba(62,3,18,.18) 38%,rgba(43,0,12,.86) 72%,rgba(58,2,18,.62));background-color:#3c0715;background-blend-mode:screen}.invitation[data-invitation-theme="blue"]{--invitation-overlay:linear-gradient(180deg,rgba(4,20,72,.26),rgba(2,13,56,.2) 38%,rgba(0,8,38,.88) 72%,rgba(2,16,58,.65));background-color:#071b4d;background-blend-mode:screen}.invitation[data-invitation-theme="purple"]{--invitation-overlay:linear-gradient(180deg,rgba(53,9,70,.25),rgba(41,4,58,.2) 38%,rgba(29,0,40,.88) 72%,rgba(46,4,62,.66));background-color:#321044;background-blend-mode:screen}.invitation[data-invitation-theme="green"]{--invitation-overlay:linear-gradient(180deg,rgba(4,55,38,.24),rgba(2,43,29,.2) 38%,rgba(0,29,19,.88) 72%,rgba(3,49,33,.64));background-color:#083d2c;background-blend-mode:screen}.invitation:after{position:absolute;inset:0;z-index:-1;background:var(--invitation-overlay);content:""}.invitation strong,.invitation span{display:block}.invitation-deity-row{display:grid;grid-template-columns:82px 150px 82px;align-items:center;justify-content:center;gap:18px;min-height:112px}.invitation-deity-row img{display:block;width:100%;max-height:108px;object-fit:contain}.invitation-deity-row .invitation-logo{max-height:126px}.invitation-ayyappa{display:block;width:auto;max-width:300px;height:290px;margin:10px auto 16px;object-fit:contain;filter:drop-shadow(0 0 15px rgba(255,217,111,.45))}.invitation h3{margin:5px 0 12px;color:#fff4bd;font:500 34px/1.2 Georgia,serif;letter-spacing:.08em;text-shadow:0 0 9px rgba(255,219,117,.75);text-transform:uppercase}.invitation-blessing,.invitation-welcome,.invitation-closing{color:#f8e9bd;font-family:Georgia,serif}.invitation-event-name{margin:8px 0;color:#ffe9a0;font:700 21px Georgia,serif;letter-spacing:.06em;text-transform:uppercase}.invitation-host{margin:10px 0;color:#fff4bd;font:700 20px Georgia,serif}.invitation-detail{margin:6px 0;font-size:17px}.invitation-address{margin:8px 0 14px;white-space:pre-line}.invitation-footer{margin-top:22px;padding-top:15px;border-top:1px solid rgba(236,197,91,.55);color:#f8e9bd;font:15px/1.5 Georgia,serif}.invitation-footer a{color:#ffe9a0;text-decoration:none}@media print{body{background:#fff}.invitation{break-inside:avoid}}</style></head><body><div class="invitation" data-invitation-theme="${escapeHtml(invitationTheme)}">${preview.innerHTML}</div><script>window.onload=()=>window.print();<\/script></body></html>`);
         printWindow.document.close();
       }
     });
