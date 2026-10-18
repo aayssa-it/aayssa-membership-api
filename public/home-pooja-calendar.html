@@ -111,11 +111,32 @@
       text-align: center;
     }
     .day strong, .day small { display: block; }
-    .day small { margin-top: 7px; font-size: 11px; line-height: 1.3; }
+    .day small { margin-top: 5px; font-size: 11px; line-height: 1.25; }
     .day.available { border-color: #b9dbc3; background: #e9f6ed; color: #1f6834; }
     .day.booked { border-color: #e3b95e; background: #fff0c9; color: #704300; }
     .day.blocked { border-color: #d5d1cc; background: #ece9e5; color: #6f6962; }
-    .rsvp-button { margin-top: 8px; padding: 6px 10px; font-size: 12px; }
+    .day-details { display: grid; gap: 3px; margin-top: 5px; }
+    .day-details small { margin: 0; overflow-wrap: anywhere; }
+    .day-host { font-weight: 700; }
+    .day-address {
+      display: -webkit-box !important;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+    .rsvp-actions { display: flex; justify-content: center; gap: 5px; margin-top: 7px; }
+    .rsvp-button {
+      display: inline-grid;
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      padding: 0;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .rsvp-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
     .rsvp-count { color: #5d3a08; font-weight: 700; }
     .message { padding: 30px; color: #666; text-align: center; }
     .message.error { color: #a32626; }
@@ -133,10 +154,21 @@
     .form-message { margin-top: 12px; font-size: 14px; }
     .form-message.error { color: #a32626; }
     @media (max-width: 600px) {
-      main { width: min(100% - 18px, 1050px); margin-top: 12px; }
-      .calendar-card { padding: 14px; }
-      .navigation strong { font-size: 18px; }
-      button { padding: 8px 10px; font-size: 13px; }
+      .banner { padding: 16px 12px; }
+      .banner img { width: 68px; max-height: 68px; }
+      .banner h1 { margin-top: 6px; }
+      main { width: min(100% - 12px, 1050px); margin: 8px auto 28px; }
+      .calendar-card { padding: 9px; }
+      .intro { margin-bottom: 10px; font-size: 13px; line-height: 1.35; }
+      .legend { gap: 9px; margin: 10px 0; font-size: 12px; }
+      .navigation { margin: 10px 0 8px; }
+      .navigation strong { font-size: 17px; }
+      button { padding: 7px 9px; font-size: 12px; }
+      .calendar-grid { grid-template-columns: repeat(7, minmax(78px, 1fr)); min-width: 574px; gap: 4px; }
+      .weekday { padding: 5px 2px; }
+      .day { min-height: 76px; padding: 6px 3px; }
+      .day small { font-size: 10px; }
+      .rsvp-button { width: 26px; height: 26px; padding: 0; }
       .form-grid { grid-template-columns: 1fr; }
       .form-grid .full { grid-column: auto; }
     }
@@ -311,41 +343,49 @@
         const item = dateMap.get(date);
         const status = item?.status || "";
         const statusClass = status.toLowerCase();
-        const detail = status === "Booked"
-          ? [
-              "Booked",
-              item.requesterName,
-              item.bookingTime,
-              item.poojaAddress
-            ].filter(Boolean).join(" · ")
-          : status === "Blocked"
-            ? `AAYSSA Event${item.reason ? ` · ${item.reason}` : ""}`
-            : status === "Available"
-              ? item.time
-              : "";
+        const isRsvpEvent = status === "Booked" || status === "Blocked";
+        const hostName = status === "Blocked"
+          ? item?.eventName || item?.reason || "AAYSSA Event"
+          : item?.requesterName || "Home Pooja";
+        const eventTime = status === "Blocked"
+          ? item?.eventTime || item?.time || ""
+          : item?.bookingTime || item?.time || "";
+        const eventAddress = status === "Blocked"
+          ? item?.eventAddress || ""
+          : item?.poojaAddress || "";
+        const availableDetail = status === "Available" ? item?.time || "" : "";
         const rsvpReference = item?.bookingId
           ? String(item.bookingId)
           : item?.eventReference || "";
-        const rsvpLabel = status === "Blocked"
-          ? item?.eventName || item?.reason || "AAYSSA Event"
-          : item?.requesterName || "Home Pooja";
+        const rsvpLabel = hostName;
         const rsvpTitle = status === "Blocked"
           ? "AAYSSA Event RSVP"
           : `${rsvpLabel} Home Pooja RSVP`;
-        const rsvpButton = rsvpReference
-          ? `<button type="button" class="rsvp-button" data-rsvp-action="new" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">New RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="edit" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Edit RSVP</button>
-             <button type="button" class="rsvp-button" data-rsvp-action="share" data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}">Share RSVP</button>`
+        const actionData = `data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}"`;
+        const rsvpButtons = rsvpReference
+          ? `<div class="rsvp-actions" aria-label="RSVP shortcuts">
+               <button type="button" class="rsvp-button" data-rsvp-action="new" ${actionData} aria-label="New RSVP" title="New RSVP"><span aria-hidden="true">+</span></button>
+               <button type="button" class="rsvp-button" data-rsvp-action="edit" ${actionData} aria-label="Edit RSVP" title="Edit RSVP"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"></path><path d="m13.5 6.5 4 4"></path></svg></button>
+               <button type="button" class="rsvp-button" data-rsvp-action="share" ${actionData} aria-label="Share RSVP" title="Share RSVP"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"></circle><circle cx="6" cy="12" r="2.5"></circle><circle cx="18" cy="19" r="2.5"></circle><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"></path></svg></button>
+             </div>`
           : "";
-        const rsvpSummary = (status === "Booked" || status === "Blocked") && item.rsvpSummary
-          ? `<small class="rsvp-count">${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
-          : "";
+        const attendingGuests = Number(item?.rsvpSummary?.attendingGuests) || 0;
+        const maybeGuests = Number(item?.rsvpSummary?.maybeGuests) || 0;
+        const eventDetails = isRsvpEvent
+          ? `<div class="day-details">
+               <small class="day-host">${escapeHtml(hostName)}</small>
+               ${eventTime ? `<small>${escapeHtml(eventTime)}</small>` : ""}
+               ${eventAddress ? `<small class="day-address" title="${escapeHtml(eventAddress)}">${escapeHtml(eventAddress)}</small>` : ""}
+               <small class="rsvp-count">${attendingGuests} attending${maybeGuests ? ` · ${maybeGuests} maybe` : ""}</small>
+             </div>`
+          : availableDetail
+            ? `<small>${escapeHtml(availableDetail)}</small>`
+            : "";
         cells.push(`
           <div class="day ${escapeHtml(statusClass)}">
             <strong>${day}</strong>
-            ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
-            ${rsvpSummary}
-            ${rsvpButton}
+            ${eventDetails}
+            ${rsvpButtons}
           </div>
         `);
       }

@@ -4399,6 +4399,39 @@
   }
 
 
+  function requestInlineConfirmation(
+    button,
+    {
+      confirmText,
+      resetText,
+      ariaLabel,
+      timeout = 10000
+    }
+  ) {
+    if (button.dataset.confirming === "true") {
+      delete button.dataset.confirming;
+      return true;
+    }
+
+    button.dataset.confirming = "true";
+    button.textContent = confirmText;
+    button.setAttribute("aria-label", ariaLabel);
+
+    setTimeout(() => {
+      if (
+        button.isConnected &&
+        button.dataset.confirming === "true"
+      ) {
+        delete button.dataset.confirming;
+        button.textContent = resetText;
+        button.removeAttribute("aria-label");
+      }
+    }, timeout);
+
+    return false;
+  }
+
+
   function setupMaaladharanRegistrationActions() {
 
     document
@@ -4508,14 +4541,19 @@
       ".withdraw-maaladharan-registration"
     ).addEventListener(
       "click",
-      async () => {
-        if (
-          !window.confirm(
-            "Withdraw this Maaladharan registration?"
-          )
-        ) {
+      async event => {
+        const button = event.currentTarget;
+
+        if (!requestInlineConfirmation(button, {
+          confirmText: "Confirm Withdrawal",
+          resetText: "Withdraw Registration",
+          ariaLabel: "Confirm Maaladharan registration withdrawal"
+        })) {
           return;
         }
+
+        button.disabled = true;
+        button.textContent = "Withdrawing…";
 
         await updateMaaladharanRegistration(
           form,
@@ -4526,6 +4564,12 @@
               form.elements.memberNotes.value
           }
         );
+
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = "Withdraw Registration";
+          button.removeAttribute("aria-label");
+        }
       }
     );
 
@@ -6565,11 +6609,16 @@
         }
 
         if (button.dataset.action === "remove-availability") {
-          if (!window.confirm(
-            "Remove this date from Home Pooja availability?"
-          )) {
+          if (!requestInlineConfirmation(button, {
+            confirmText: "Confirm Remove",
+            resetText: "Remove",
+            ariaLabel: "Confirm removal from Home Pooja availability"
+          })) {
             return;
           }
+
+          button.disabled = true;
+          button.textContent = "Removing…";
 
           await submitHomePoojaAdminAction(
             "PATCH",
@@ -6578,6 +6627,12 @@
               poojaDate: button.dataset.poojaDate
             }
           );
+
+          if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Remove";
+            button.removeAttribute("aria-label");
+          }
           return;
         }
 
@@ -6670,11 +6725,16 @@
         if (button.dataset.action === "send-cancellation-email") {
           const row = button.closest("[data-home-pooja-id]");
 
-          if (!window.confirm(
-            "Send the Home Pooja cancellation email to this host?"
-          )) {
+          if (!row || !requestInlineConfirmation(button, {
+            confirmText: "Confirm Send Email",
+            resetText: "Send Cancellation Email",
+            ariaLabel: "Confirm cancellation email delivery"
+          })) {
             return;
           }
+
+          button.disabled = true;
+          button.textContent = "Sending…";
 
           await submitHomePoojaAdminAction(
             "PATCH",
@@ -6683,6 +6743,12 @@
               action: "send-cancellation-email"
             }
           );
+
+          if (button.isConnected) {
+            button.disabled = false;
+            button.textContent = "Send Cancellation Email";
+            button.removeAttribute("aria-label");
+          }
           return;
         }
 
