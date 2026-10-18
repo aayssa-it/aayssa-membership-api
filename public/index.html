@@ -3886,6 +3886,28 @@
           return;
         }
 
+        const isEmbeddedPortal =
+          document.documentElement.classList.contains("portal-embedded");
+        const imageSaveWindow = isEmbeddedPortal
+          ? window.open("", "_blank")
+          : null;
+
+        if (isEmbeddedPortal && !imageSaveWindow) {
+          message.className = "inline-message error";
+          message.textContent =
+            "Please allow pop-ups so the invitation image can open for saving.";
+          return;
+        }
+
+        if (imageSaveWindow) {
+          imageSaveWindow.document.write(
+            "<!doctype html><title>Preparing AAYSSA Invitation…</title>" +
+            "<body style='font-family:Arial,sans-serif;padding:30px;text-align:center'>" +
+            "<p>Preparing your invitation image…</p></body>"
+          );
+          imageSaveWindow.document.close();
+        }
+
         button.disabled = true;
         message.className = "inline-message";
         message.textContent = "Preparing invitation image...";
@@ -3925,16 +3947,51 @@
             );
           });
           const imageUrl = URL.createObjectURL(blob);
-          const download = document.createElement("a");
-          download.download = "aayssa-invitation.png";
-          download.href = imageUrl;
-          document.body.appendChild(download);
-          download.click();
-          download.remove();
-          setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
-          message.className = "inline-message success";
-          message.textContent = "Invitation image saved.";
+
+          if (imageSaveWindow) {
+            imageSaveWindow.document.open();
+            imageSaveWindow.document.write(`
+              <!doctype html>
+              <html lang="en">
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>AAYSSA Invitation</title>
+                <style>
+                  body{margin:0;padding:20px;background:#252525;color:#fff;
+                    font-family:Arial,sans-serif;text-align:center}
+                  a{display:inline-block;margin:0 0 18px;padding:12px 20px;
+                    border-radius:8px;background:#b36b00;color:#fff;
+                    font-weight:700;text-decoration:none}
+                  img{display:block;width:auto;max-width:100%;height:auto;margin:auto}
+                </style>
+              </head>
+              <body>
+                <a href="${imageUrl}" download="aayssa-invitation.png">
+                  Download Invitation Image
+                </a>
+                <p>On iPhone or iPad, touch and hold the image to save it.</p>
+                <img src="${imageUrl}" alt="AAYSSA invitation">
+              </body>
+              </html>
+            `);
+            imageSaveWindow.document.close();
+            setTimeout(() => URL.revokeObjectURL(imageUrl), 600000);
+            message.className = "inline-message success";
+            message.textContent =
+              "Invitation image opened. Use Download Invitation Image in the new tab.";
+          } else {
+            const download = document.createElement("a");
+            download.download = "aayssa-invitation.png";
+            download.href = imageUrl;
+            document.body.appendChild(download);
+            download.click();
+            download.remove();
+            setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+            message.className = "inline-message success";
+            message.textContent = "Invitation image saved.";
+          }
         } catch (error) {
+          imageSaveWindow?.close();
           message.className = "inline-message error";
           message.textContent = "Unable to save the invitation image.";
         } finally {
