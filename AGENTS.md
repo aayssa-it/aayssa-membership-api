@@ -344,7 +344,7 @@ Board/Admin dashboard includes:
 
 ## Public Registration Embed
 
-`public/register-embed.html` is intended for GoDaddy.
+`public/register-embed.html` is intended for GoDaddy and is also served from the portal domain. The registration API CORS allowlist includes both public-site hostnames and `https://portal.atlantaayyappasevasangam.org`.
 
 Registration supports:
 

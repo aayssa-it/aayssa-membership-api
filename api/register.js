@@ -32,7 +32,8 @@ export default async function handler(req, res) {
 
   const allowedOrigins = [
     "https://atlantaayyappasevasangam.org",
-    "https://www.atlantaayyappasevasangam.org"
+    "https://www.atlantaayyappasevasangam.org",
+    "https://portal.atlantaayyappasevasangam.org"
   ];
 
   const origin =
