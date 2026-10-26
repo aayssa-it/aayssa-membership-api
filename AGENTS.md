@@ -303,7 +303,7 @@ Member portal (`public/index.html`) includes:
   - At launch the `Board Preview` and `Not Public Yet` labels are removed automatically.
   - Allows an authenticated family to book an available date immediately on a first-come, first-served basis.
   - Marks the date booked as soon as the booking is saved; no administrator approval is required.
-  - Confirmed bookings include a web invitation builder. The host can edit the displayed host name and address while the booked date, morning/evening schedule, invitation wording, and AAYSSA styling remain fixed; invitations can be copied or printed.
+  - Confirmed bookings include a web invitation builder. The host can edit the displayed host name and address while the booked date, morning/evening schedule, invitation wording, and AAYSSA styling remain fixed. Home Pooja invitations show the matching fixed morning or evening Pooja Details program; invitations can be saved as an image or PDF.
 - During preview, appears only for authenticated Board/Admin users and the member API enforces the same role restriction.
   - Preview loading is isolated from the core member profile so an optional booking or dashboard failure cannot prevent portal access.
   - Calendar-only dates are formatted as local calendar dates to avoid UTC date shifts in the browser.
