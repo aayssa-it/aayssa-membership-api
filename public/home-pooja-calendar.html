@@ -370,13 +370,15 @@
              </div>`
           : "";
         const attendingGuests = Number(item?.rsvpSummary?.attendingGuests) || 0;
+        const attendingAdults = Number(item?.rsvpSummary?.attendingAdults) || 0;
+        const attendingKids = Number(item?.rsvpSummary?.attendingKids) || 0;
         const maybeGuests = Number(item?.rsvpSummary?.maybeGuests) || 0;
         const eventDetails = isRsvpEvent
           ? `<div class="day-details">
                <small class="day-host">${escapeHtml(hostName)}</small>
                ${eventTime ? `<small>${escapeHtml(eventTime)}</small>` : ""}
                ${eventAddress ? `<small class="day-address" title="${escapeHtml(eventAddress)}">${escapeHtml(eventAddress)}</small>` : ""}
-               <small class="rsvp-count">${attendingGuests} attending${maybeGuests ? ` · ${maybeGuests} maybe` : ""}</small>
+               <small class="rsvp-count">${attendingGuests} attending · ${attendingAdults} adults · ${attendingKids} kids${maybeGuests ? ` · ${maybeGuests} maybe` : ""}</small>
              </div>`
           : availableDetail
             ? `<small>${escapeHtml(availableDetail)}</small>`

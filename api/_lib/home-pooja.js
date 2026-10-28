@@ -918,6 +918,8 @@ async function buildPublicCalendar(
           item.rsvpSummary = summaries.get(String(item.bookingId)) || {
             attendingResponses: 0,
             attendingGuests: 0,
+            attendingAdults: 0,
+            attendingKids: 0,
             maybeResponses: 0,
             maybeGuests: 0
           };
@@ -926,6 +928,8 @@ async function buildPublicCalendar(
           item.rsvpSummary = summaries.get(item.eventReference) || {
             attendingResponses: 0,
             attendingGuests: 0,
+            attendingAdults: 0,
+            attendingKids: 0,
             maybeResponses: 0,
             maybeGuests: 0
           };
