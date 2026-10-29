@@ -96,6 +96,7 @@ Feedback table:
 - Fields are resolved by name: `Feedback`, `Category`, `Anonymous`, `Name`, `Email`, `Phone Number`, `May Contact`, `Status`, `Included in Digest`, and `Digest Sent On`.
 - Public anonymous submissions discard all contact details server-side.
 - New submissions default to `New` and remain excluded from a digest until Resend confirms delivery.
+- Board/Admin users manage feedback in an Administration dashboard tab. Active statuses are `New`, `Under Review`, `Needs Follow-up`, and `Planned`; `Completed`, `Closed`, and `Duplicate` items appear in collapsed history.
 
 Volunteer records are per person:
 - Primary
@@ -185,6 +186,9 @@ The old Supabase magic-link callback route was removed after switching to passco
 
 - `GET /api/admin-members?resource=rsvp`
   - Board/Admin-only view of all current Home Pooja and AAYSSA event RSVP groups, summaries, identities, contact details, and notes.
+
+- `GET|PATCH /api/admin-members?resource=feedback`
+  - Board/Admin-only feedback queue. GET returns feedback and supported statuses; PATCH updates one row's status.
 
 - `POST /api/login`
   - Starts Supabase email OTP/passcode login.
@@ -336,7 +340,7 @@ Board/Admin dashboard includes:
 - Board/Admin can cancel an active Home Pooja booking after confirmation. The row remains for audit history with `Cancelled` status, while the date immediately returns to availability when its normal or custom availability rule permits.
 - Cancelling a Home Pooja booking sends the host a best-effort Resend cancellation email. Successful delivery is recorded in the existing Admin Notes field, and cancelled rows show that an email was already sent next to the Board/Admin send/resend action. Bookings cancelled before this tracking was deployed remain eligible for sending.
 - Board/Admin date blocking with a required reason, plus calendar-level Unblock controls for custom and built-in blocked dates.
-- Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column.
+- Board/Admin availability management can add any Home Pooja date and scheduled time. Each available calendar day exposes Edit, Remove, and Block controls directly in the calendar; overrides use existing booking-table fields and do not require another Baserow column. Removing default or custom availability converts its override row into an unavailable marker rather than relying on row deletion.
 - Automatically generated Friday/Saturday/Sunday availability ends after December 12, 2026. Later dates are empty by default and appear only when Board/Admin adds availability; removed availability also renders as an ordinary empty calendar day rather than an `Unavailable` state.
 - Administration Blocks provides Edit controls for changing a blocked event's date and event name.
 - December 4, 2026 is a built-in `Mandalam Closing` block, and blocked special-event dates appear in the calendar even when the day is outside normal Home Pooja availability.

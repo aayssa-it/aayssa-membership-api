@@ -1617,6 +1617,66 @@
       display: none;
     }
 
+    .feedback-admin-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .feedback-admin-card {
+      padding: 18px;
+      border: 1px solid #e4d8c8;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .feedback-admin-header,
+    .feedback-admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .feedback-admin-category {
+      color: #6c350d;
+      font-weight: 800;
+    }
+
+    .feedback-admin-status {
+      padding: 8px 10px;
+      border: 1px solid #cdbda9;
+      border-radius: 7px;
+      background: #fff;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    .feedback-admin-text {
+      margin: 14px 0;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    .feedback-admin-contact,
+    .feedback-admin-date {
+      color: #6d645c;
+      font-size: 13px;
+    }
+
+    .feedback-history {
+      margin-top: 22px;
+      border-top: 1px solid #eadfD1;
+      padding-top: 16px;
+    }
+
+    .feedback-history summary {
+      cursor: pointer;
+      color: #6c350d;
+      font-weight: 800;
+    }
+
     .capacity-monitor-header {
       display: flex;
       flex-wrap: wrap;
@@ -8518,10 +8578,152 @@
         if (target === "capacity") {
           loadCapacityMonitor();
         }
+
+        if (target === "feedback") {
+          loadFeedbackAdmin();
+        }
       });
     });
 
     selectPanel("overview");
+  }
+
+  let feedbackAdminLoaded = false;
+
+  async function loadFeedbackAdmin(force = false) {
+    const container = document.getElementById("feedbackAdminContent");
+    if (!container || (feedbackAdminLoaded && !force)) {
+      return;
+    }
+
+    container.innerHTML = '<div class="dashboard-loading">Loading feedback…</div>';
+
+    try {
+      const response = await fetch(
+        "/api/admin-members?resource=feedback",
+        { credentials: "include" }
+      );
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to load feedback.");
+      }
+
+      const feedback = Array.isArray(data.feedback) ? data.feedback : [];
+      const statuses = Array.isArray(data.statuses) ? data.statuses : [];
+      const historyStatuses = new Set(["Completed", "Closed", "Duplicate"]);
+      const active = feedback.filter(item => !historyStatuses.has(item.status));
+      const history = feedback.filter(item => historyStatuses.has(item.status));
+
+      container.innerHTML = `
+        <div class="feedback-admin-header">
+          <div>
+            <h3>Feedback Management</h3>
+            <p class="directory-subtitle">
+              Review community feedback and keep its follow-up status current.
+            </p>
+          </div>
+          <span class="dashboard-number">${active.length} active</span>
+        </div>
+        <div id="feedbackAdminMessage" class="inline-message" role="status"></div>
+        <div class="feedback-admin-list">
+          ${active.length
+            ? active.map(item => renderFeedbackAdminCard(item, statuses)).join("")
+            : "<p>No active feedback.</p>"}
+        </div>
+        <details class="feedback-history">
+          <summary>History (${history.length})</summary>
+          <div class="feedback-admin-list">
+            ${history.length
+              ? history.map(item => renderFeedbackAdminCard(item, statuses)).join("")
+              : "<p>No completed, closed, or duplicate feedback.</p>"}
+          </div>
+        </details>
+      `;
+
+      container.onchange = async event => {
+        const select = event.target.closest("[data-feedback-status]");
+        if (!select) return;
+
+        const previousStatus = select.dataset.previousStatus || "New";
+        select.disabled = true;
+        const message = document.getElementById("feedbackAdminMessage");
+
+        try {
+          const updateResponse = await fetch(
+            "/api/admin-members?resource=feedback",
+            {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: Number(select.dataset.feedbackStatus),
+                status: select.value
+              })
+            }
+          );
+          const updateData = await updateResponse.json();
+          if (!updateResponse.ok || !updateData.success) {
+            throw new Error(updateData.message || "Unable to update feedback status.");
+          }
+
+          feedbackAdminLoaded = false;
+          await loadFeedbackAdmin(true);
+        } catch (error) {
+          select.value = previousStatus;
+          select.disabled = false;
+          if (message) {
+            message.className = "inline-message error";
+            message.textContent = error.message;
+          }
+        }
+      };
+
+      feedbackAdminLoaded = true;
+    } catch (error) {
+      container.innerHTML = `<div class="error">${escapeHtml(error.message)}</div>`;
+    }
+  }
+
+  function renderFeedbackAdminCard(item, statuses) {
+    const contact = item.anonymous
+      ? "Anonymous submission"
+      : [item.name, item.email, item.phoneNumber]
+          .filter(Boolean)
+          .join(" · ") || "Contact not provided";
+    const contactPermission = item.mayContact
+      ? " · Follow-up permitted"
+      : " · Do not contact";
+    const submitted = item.submittedOn
+      ? new Date(item.submittedOn).toLocaleString()
+      : `Feedback #${Number(item.id)}`;
+
+    return `
+      <article class="feedback-admin-card">
+        <div class="feedback-admin-header">
+          <span class="feedback-admin-category">${escapeHtml(item.category)}</span>
+          <span class="feedback-admin-date">${escapeHtml(submitted)}</span>
+        </div>
+        <p class="feedback-admin-text">${escapeHtml(item.feedback)}</p>
+        <div class="feedback-admin-actions">
+          <span class="feedback-admin-contact">
+            ${escapeHtml(contact + (item.anonymous ? "" : contactPermission))}
+          </span>
+          <label>
+            <span class="sr-only">Status for feedback ${Number(item.id)}</span>
+            <select class="feedback-admin-status"
+              data-feedback-status="${Number(item.id)}"
+              data-previous-status="${escapeHtml(item.status)}">
+              ${statuses.map(status => `
+                <option value="${escapeHtml(status)}"
+                  ${status === item.status ? "selected" : ""}>
+                  ${escapeHtml(status)}
+                </option>
+              `).join("")}
+            </select>
+          </label>
+        </div>
+      </article>
+    `;
   }
 
   let capacityMonitorLoaded = false;
@@ -8738,6 +8940,10 @@
           <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="members" aria-selected="false">
             Member Directory
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="feedback" aria-selected="false">
+            Feedback
           </button>
           <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="capacity" aria-selected="false">
@@ -8960,6 +9166,15 @@
         <section class="admin-dashboard-panel" hidden
           data-admin-dashboard-panel="members">
           ${renderMemberDirectoryShell()}
+        </section>
+
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="feedback">
+          <div class="dashboard-card full-width" id="feedbackAdminContent">
+            <div class="dashboard-loading">
+              Open this tab to review feedback.
+            </div>
+          </div>
         </section>
 
         <section class="admin-dashboard-panel" hidden

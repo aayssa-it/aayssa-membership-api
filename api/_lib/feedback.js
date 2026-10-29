@@ -1,5 +1,6 @@
 import {
   cleanString,
+  getAuthenticatedMember,
   getBaserowBaseUrl,
   getBaserowHeaders
 } from "./aayssa.js";
@@ -22,6 +23,16 @@ const CATEGORIES = [
   "Finance and Donations",
   "General Suggestion",
   "Other"
+];
+
+const FEEDBACK_STATUSES = [
+  "New",
+  "Under Review",
+  "Needs Follow-up",
+  "Planned",
+  "Completed",
+  "Closed",
+  "Duplicate"
 ];
 
 let fieldConfigurationPromise;
@@ -112,6 +123,88 @@ export async function handlePublicFeedback(req, res) {
     return res.status(500).json({
       success: false,
       message: "Unable to submit feedback right now. Please try again."
+    });
+  }
+}
+
+export async function handleAdminFeedback(req, res) {
+  if (!["GET", "PATCH"].includes(req.method)) {
+    return res.status(405).json({
+      success: false,
+      message: "Method not allowed."
+    });
+  }
+
+  try {
+    const auth = await getAuthenticatedMember(req);
+    if (auth.status !== 200) {
+      return res.status(auth.status).json({
+        success: false,
+        message: auth.error
+      });
+    }
+
+    if (!hasBoardAccess(auth.memberRow)) {
+      return res.status(403).json({
+        success: false,
+        message: "Board or administrator access required."
+      });
+    }
+
+    if (req.method === "GET") {
+      const rows = await fetchAllFeedbackRows();
+      const feedback = rows
+        .map(mapFeedbackRow)
+        .sort((left, right) =>
+          String(right.submittedOn).localeCompare(String(left.submittedOn))
+        );
+
+      return res.status(200).json({
+        success: true,
+        feedback,
+        statuses: FEEDBACK_STATUSES
+      });
+    }
+
+    const id = Number(req.body?.id);
+    const status = cleanString(req.body?.status);
+    if (!Number.isInteger(id) || id <= 0) {
+      return badRequest(res, "Select a valid feedback item.");
+    }
+    if (!FEEDBACK_STATUSES.includes(status)) {
+      return badRequest(res, "Select a valid feedback status.");
+    }
+
+    const fields = await getFieldConfiguration();
+    const response = await fetch(
+      `${getBaserowBaseUrl()}/api/database/rows/table/${TABLE_ID}/${id}/?user_field_names=true`,
+      {
+        method: "PATCH",
+        headers: getBaserowHeaders(),
+        body: JSON.stringify({
+          [fields.status.name]: selectOptionId(fields.status, status)
+        })
+      }
+    );
+
+    if (!response.ok) {
+      console.error(
+        "Feedback status update failed:",
+        response.status,
+        await response.text()
+      );
+      throw new Error("Unable to update feedback status.");
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Feedback status updated."
+    });
+  } catch (error) {
+    console.error("Admin feedback error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Unable to manage feedback."
     });
   }
 }
@@ -353,6 +446,29 @@ function selectValue(value) {
   return value && typeof value === "object"
     ? value.value || value.name || ""
     : cleanString(value);
+}
+
+function mapFeedbackRow(row) {
+  const anonymous = Boolean(row.Anonymous);
+  return {
+    id: Number(row.id),
+    feedback: cleanString(row.Feedback),
+    category: selectValue(row.Category) || "Other",
+    anonymous,
+    name: anonymous ? "" : cleanString(row.Name),
+    email: anonymous ? "" : cleanString(row.Email),
+    phoneNumber: anonymous ? "" : cleanString(row["Phone Number"]),
+    mayContact: !anonymous && Boolean(row["May Contact"]),
+    status: selectValue(row.Status) || "New",
+    submittedOn: cleanString(row.created_on || row.createdOn)
+  };
+}
+
+function hasBoardAccess(memberRow) {
+  const role = memberRow?.field_10493689;
+  const id = Number(role?.id ?? role);
+  const name = cleanString(role?.value).toLowerCase();
+  return id === 7473605 || id === 7473606 || name === "board" || name === "admin";
 }
 
 function escapeHtml(value) {

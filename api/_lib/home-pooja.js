@@ -1486,11 +1486,6 @@ async function removeAvailability(date, adminEmail) {
     isActiveAvailabilityOverride(mapEntry(row))
   );
 
-  if (overrideRow && !getTimeForDate(date)) {
-    await deleteEntry(overrideRow.id);
-    return;
-  }
-
   const removedRow = rows.find(row =>
     isAvailabilityRemoved(mapEntry(row))
   );
@@ -1784,22 +1779,6 @@ async function patchEntry(id, values) {
 
     throw new Error(
       "Unable to update the calendar entry."
-    );
-  }
-}
-
-async function deleteEntry(id) {
-  const response = await fetch(
-    rowUrl(id),
-    {
-      method: "DELETE",
-      headers: getBaserowHeaders()
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      "Unable to remove the availability override."
     );
   }
 }
