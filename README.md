@@ -4,6 +4,8 @@ The membership and community-services portal for the [Atlanta Ayyappa Seva Sanga
 
 The application gives AAYSSA families one place to manage membership details, register for programs, volunteer, make donations, reserve Home Pooja dates, and RSVP for community events. Administrators use the same portal to support members and coordinate event operations.
 
+Source code and release history are maintained in the [AAYSSA IT GitHub organization](https://github.com/aayssa-it/aayssa-membership-api).
+
 ## Live services
 
 - [Member portal](https://portal.atlantaayyappasevasangam.org)
