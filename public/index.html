@@ -6594,9 +6594,7 @@
       }
     );
 
-    container.addEventListener(
-      "submit",
-      async event => {
+    container.onsubmit = async event => {
         const availabilityEditForm = event.target.closest(
           ".home-pooja-availability-edit-form"
         );
@@ -6661,12 +6659,9 @@
             blockReason: values.get("blockReason")
           }
         );
-      }
-    );
+    };
 
-    container.addEventListener(
-      "click",
-      async event => {
+    container.onclick = async event => {
         const button =
           event.target.closest(
             "button[data-action]"
@@ -6946,8 +6941,7 @@
               note?.value || ""
           }
         );
-      }
-    );
+      };
   }
 
 
