@@ -273,7 +273,7 @@ Member portal (`public/index.html`) includes:
 - A desktop header matching the public AAYSSA website, with its hosted transparent logo, complete navigation labels, and responsive mobile menu.
   - Member, Events, and Sevas are direct links without dropdown indicators and currently point to the public home page because standalone destination routes are unavailable.
 - Top member header with welcome text, role badge, and logout button.
-- A responsive sidebar shows one major section at a time: Overview, Maaladharan, Home Pooja where available, Donations, Seva & Volunteering, and Board/Admin Administration. Mobile uses a compact selector, and Feedback & Suggestions opens the standalone form.
+- A responsive sidebar shows one major section at a time: Overview, Maaladharan, Home Pooja where available, Donations, Seva & Volunteering, and Board/Admin Administration. Mobile uses a compact selector, and the single-line Feedback & Suggestions link opens the standalone form in a new tab.
 - After authentication, shows a “Stay connected” link to the AAYSSA Family WhatsApp group; the public login/sign-up embed does not show WhatsApp links.
 - An unauthenticated portal visit links directly to the deployed portal login form; do not use the removed public `/member-login` route.
 - Family details card with edit controls.
@@ -380,7 +380,7 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
-`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays each booked/event date in a compact host name, scheduled time, address, and aggregate Attending/Maybe guest-count order; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates use accessible compact + (New RSVP), pencil (Edit RSVP), and share icon shortcuts with text labels available to assistive technology and tooltips; Share RSVP copies the event-specific link directly and confirms on the button, shared `?rsvp=<reference>&date=<date>` links navigate to the event month and open its RSVP form automatically, using the host name in Home Pooja dialog titles and an AAYSSA Event title for blocked events. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
+`public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays each booked/event date with a compact host name, scheduled time, address, total attending guests, separate attending adult and kid counts, and aggregate Maybe guest count; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates show a visible `RSVP` label beside accessible compact + (New RSVP), pencil (Edit RSVP), and share icon shortcuts, with action labels available to assistive technology and tooltips; Share RSVP copies the event-specific link directly and confirms on the button, shared `?rsvp=<reference>&date=<date>` links navigate to the event month and open its RSVP form automatically, using the host name in Home Pooja dialog titles and an AAYSSA Event title for blocked events. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
 
 ## Public Maaladharan Registration Embed
 

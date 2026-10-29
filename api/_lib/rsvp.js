@@ -377,6 +377,8 @@ export async function fetchPublicRsvpSummaries(bookingReferences) {
     const summary = summaries.get(rsvp.bookingReference) || {
       attendingResponses: 0,
       attendingGuests: 0,
+      attendingAdults: 0,
+      attendingKids: 0,
       maybeResponses: 0,
       maybeGuests: 0
     };
@@ -385,6 +387,8 @@ export async function fetchPublicRsvpSummaries(bookingReferences) {
     if (rsvp.status === "Attending") {
       summary.attendingResponses += 1;
       summary.attendingGuests += guests;
+      summary.attendingAdults += rsvp.adults;
+      summary.attendingKids += rsvp.kids;
     } else {
       summary.maybeResponses += 1;
       summary.maybeGuests += guests;

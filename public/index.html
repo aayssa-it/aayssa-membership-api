@@ -246,6 +246,19 @@
       color: #fff;
     }
 
+    .portal-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .portal-external-icon {
+      display: inline-block;
+      flex: 0 0 auto;
+      line-height: 1;
+    }
+
     .portal-mobile-selector {
       display: none;
       width: 100%;
@@ -261,6 +274,9 @@
 
     .portal-mobile-feedback {
       display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
       margin: -6px 0 16px;
       padding: 10px 12px;
       border: 1px solid #d9bd83;
@@ -270,6 +286,7 @@
       font-weight: 700;
       text-align: center;
       text-decoration: none;
+      white-space: nowrap;
     }
 
     .portal-panel[hidden] {
@@ -2229,7 +2246,7 @@
       }
 
       .portal-mobile-feedback {
-        display: block;
+        display: flex;
       }
 
       .grid,
@@ -3339,7 +3356,7 @@
                 ? `<small class="pooja-calendar-booking-address">${escapeHtml(item.poojaAddress)}</small>`
                 : ""}
               ${item?.rsvpSummary
-                ? `<small>${Number(item.rsvpSummary.attendingGuests) || 0} attending${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
+                ? `<small>${Number(item.rsvpSummary.attendingGuests) || 0} attending · ${Number(item.rsvpSummary.attendingAdults) || 0} adults · ${Number(item.rsvpSummary.attendingKids) || 0} kids${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
                 : ""}
             `
             : "";
@@ -8317,7 +8334,8 @@
 
         <a class="portal-mobile-feedback" href="/feedback.html"
           target="_blank" rel="noopener noreferrer">
-          Feedback &amp; Suggestions ↗
+          <span>Feedback &amp; Suggestions</span>
+          <span class="portal-external-icon" aria-hidden="true">↗</span>
         </a>
 
         <div class="portal-shell">
@@ -8338,7 +8356,10 @@
               ? '<button class="portal-nav-button" type="button" data-portal-target="administration">Administration</button>'
               : ""}
             <a class="portal-nav-link" href="/feedback.html" target="_blank"
-              rel="noopener noreferrer">Feedback &amp; Suggestions ↗</a>
+              rel="noopener noreferrer">
+              <span>Feedback &amp; Suggestions</span>
+              <span class="portal-external-icon" aria-hidden="true">↗</span>
+            </a>
           </aside>
 
           <div class="portal-content">
