@@ -6,7 +6,8 @@ import {
   getBaserowHeaders
 } from "./aayssa.js";
 import {
-  fetchPublicRsvpSummaries
+  fetchPublicRsvpSummaries,
+  isRsvpEnabled
 } from "./rsvp.js";
 
 const TABLE_ID =
@@ -906,7 +907,7 @@ async function buildPublicCalendar(
     });
   }
 
-  if (includeBookingDetails) {
+  if (includeBookingDetails && isRsvpEnabled()) {
     try {
       const bookingIds = dates
         .map(item => item.bookingId || item.eventReference)

@@ -2692,6 +2692,11 @@
   ];
 
   let currentMember = null;
+  const RSVP_PAUSES_AT = Date.parse("2026-11-01T04:00:00Z");
+
+  function isRsvpEnabled() {
+    return Date.now() < RSVP_PAUSES_AT;
+  }
   let currentVolunteers = [];
   let currentDonations = null;
   let currentMaaladharan = null;
@@ -3148,20 +3153,21 @@
 
   async function loadHomePoojaBookings() {
     try {
+      const rsvpEnabled = isRsvpEnabled();
       const [response, rsvpResponse] = await Promise.all([
         fetch(
           "/api/my-volunteers?resource=home-pooja",
           { credentials: "include" }
         ),
-        fetch(
+        rsvpEnabled ? fetch(
           "/api/my-volunteers?resource=rsvp",
           { credentials: "include" }
-        )
+        ) : Promise.resolve(null)
       ]);
 
       const [data, rsvpData] = await Promise.all([
         response.json(),
-        rsvpResponse.json()
+        rsvpResponse ? rsvpResponse.json() : Promise.resolve({ success: true, groups: [] })
       ]);
 
       if (!response.ok || !data.success) {
@@ -3171,7 +3177,7 @@
         );
       }
 
-      data.rsvpGroups = rsvpResponse.ok && rsvpData.success
+      data.rsvpGroups = rsvpResponse?.ok && rsvpData.success
         ? rsvpData.groups
         : [];
 
@@ -3258,14 +3264,14 @@
                             data-invitation-id="${escapeHtml(request.id)}">
                             Create Invitation
                           </button>
-                          <button class="small-action-button"
+                          ${isRsvpEnabled() ? `<button class="small-action-button"
                             type="button"
                             data-action="share-rsvp"
                             data-rsvp-reference="${escapeHtml(request.id)}"
                             data-rsvp-date="${escapeHtml(request.poojaDate)}"
                             data-rsvp-event="${escapeHtml(`Home Pooja on ${formatPortalDate(request.poojaDate)}`)}">
                             Share RSVP Link
-                          </button>
+                          </button>` : ""}
                         </div>
                         ${renderHomePoojaInvitationBuilder(request)}
                       `
@@ -3277,12 +3283,12 @@
           }
         </div>
 
-        <details class="home-pooja-admin-dropdown">
+        ${isRsvpEnabled() ? `<details class="home-pooja-admin-dropdown">
           <summary>Your Home Pooja RSVPs (${rsvpGroups.reduce((total, group) => total + group.responses.length, 0)})</summary>
           <div class="home-pooja-admin-dropdown-content">
             ${renderRsvpGroups(rsvpGroups, "No RSVPs have been submitted for your Home Pooja bookings.")}
           </div>
-        </details>
+        </details>` : ""}
 
         <form id="homePoojaMemberForm" class="maaladharan-form">
           <div class="form-field">
@@ -3415,7 +3421,7 @@
               ${item?.poojaAddress
                 ? `<small class="pooja-calendar-booking-address">${escapeHtml(item.poojaAddress)}</small>`
                 : ""}
-              ${item?.rsvpSummary
+              ${isRsvpEnabled() && item?.rsvpSummary
                 ? `<small>${Number(item.rsvpSummary.attendingGuests) || 0} attending · ${Number(item.rsvpSummary.attendingAdults) || 0} adults · ${Number(item.rsvpSummary.attendingKids) || 0} kids${item.rsvpSummary.maybeGuests ? ` · ${Number(item.rsvpSummary.maybeGuests)} maybe` : ""}</small>`
                 : ""}
             `
@@ -6288,20 +6294,21 @@
     }
 
     try {
+      const rsvpEnabled = isRsvpEnabled();
       const [response, rsvpResponse] = await Promise.all([
         fetch(
           "/api/admin-members?resource=home-pooja",
           { credentials: "include" }
         ),
-        fetch(
+        rsvpEnabled ? fetch(
           "/api/admin-members?resource=rsvp",
           { credentials: "include" }
-        )
+        ) : Promise.resolve(null)
       ]);
 
       const [data, rsvpData] = await Promise.all([
         response.json(),
-        rsvpResponse.json()
+        rsvpResponse ? rsvpResponse.json() : Promise.resolve({ success: true, groups: [] })
       ]);
 
       if (!response.ok || !data.success) {
@@ -6330,7 +6337,7 @@
         calendarDates.filter(item =>
           item.status === "Blocked"
         );
-      const rsvpGroups = rsvpResponse.ok && rsvpData.success && Array.isArray(rsvpData.groups)
+      const rsvpGroups = rsvpResponse?.ok && rsvpData.success && Array.isArray(rsvpData.groups)
         ? rsvpData.groups
         : [];
 
@@ -6415,14 +6422,14 @@
           </div>
         </form>
 
-        <details class="home-pooja-admin-dropdown">
+        ${rsvpEnabled ? `<details class="home-pooja-admin-dropdown">
           <summary>
             RSVP Responses (${rsvpGroups.reduce((total, group) => total + group.responses.length, 0)})
           </summary>
           <div class="home-pooja-admin-dropdown-content">
             ${renderRsvpGroups(rsvpGroups)}
           </div>
-        </details>
+        </details>` : ""}
 
         <details class="home-pooja-admin-dropdown">
           <summary>
@@ -8935,7 +8942,7 @@
           </button>
           <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="home-pooja" aria-selected="false">
-            Home Pooja &amp; RSVP
+            ${isRsvpEnabled() ? "Home Pooja &amp; RSVP" : "Home Pooja"}
           </button>
           <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="members" aria-selected="false">

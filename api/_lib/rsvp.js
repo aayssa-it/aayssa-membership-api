@@ -11,6 +11,11 @@ const HOME_POOJA_TABLE_ID =
   process.env.BASEROW_HOME_POOJA_TABLE_ID || "1240702";
 const AAYSSA_EVENT_SUMMARY_EMAIL =
   "aayssa.official@gmail.com";
+const RSVP_PAUSES_AT = Date.parse("2026-11-01T04:00:00Z");
+
+export function isRsvpEnabled(now = Date.now()) {
+  return now < RSVP_PAUSES_AT;
+}
 
 const FIELDS = {
   attendeeName: 11608192,
@@ -54,6 +59,14 @@ export async function handlePublicRsvp(req, res) {
     return res.status(405).json({
       success: false,
       message: "Method not allowed."
+    });
+  }
+
+  if (!isRsvpEnabled()) {
+    return res.status(410).json({
+      success: false,
+      code: "RSVP_PAUSED",
+      message: "RSVP is temporarily unavailable."
     });
   }
 
@@ -236,6 +249,9 @@ export async function handleMemberRsvps(req, res) {
     if (auth.status !== 200) {
       return res.status(auth.status).json({ success: false, message: auth.error });
     }
+    if (!isRsvpEnabled()) {
+      return res.status(200).json({ success: true, paused: true, groups: [] });
+    }
     const groups = await buildRsvpGroups({ familyId: Number(auth.memberRow.id) });
     return res.status(200).json({ success: true, groups });
   } catch (error) {
@@ -257,6 +273,9 @@ export async function handleAdminRsvps(req, res) {
         message: "Board or administrator access required."
       });
     }
+    if (!isRsvpEnabled()) {
+      return res.status(200).json({ success: true, paused: true, groups: [] });
+    }
     const groups = await buildRsvpGroups({ includeEvents: true });
     return res.status(200).json({ success: true, groups });
   } catch (error) {
@@ -275,6 +294,14 @@ export async function handleRsvpReminders(req, res) {
 
   if (!secret || authorization !== `Bearer ${secret}`) {
     return res.status(401).json({ success: false, message: "Unauthorized." });
+  }
+
+  if (!isRsvpEnabled()) {
+    return res.status(200).json({
+      success: true,
+      paused: true,
+      message: "RSVP notifications are temporarily paused."
+    });
   }
 
   try {
@@ -360,6 +387,7 @@ export async function handleRsvpReminders(req, res) {
 }
 
 export async function fetchPublicRsvpSummaries(bookingReferences) {
+  if (!isRsvpEnabled()) return new Map();
   const wanted = new Set(
     bookingReferences.map(normalizeReference).filter(Boolean)
   );

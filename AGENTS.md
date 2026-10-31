@@ -384,6 +384,10 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 
 ## Public Home Pooja Calendar
 
+### Temporary RSVP pause
+
+RSVP functionality is paused beginning November 1, 2026 at 12:00 AM Eastern (`2026-11-01T04:00:00Z`). After the cutoff, the public calendar, member portal, and administration views hide RSVP shortcuts, response totals, sharing actions, and response history. Public RSVP submissions and edits return `RSVP_PAUSED`; member and administrator RSVP endpoints return empty paused results; public calendar responses omit RSVP summaries; and the RSVP reminder/host-summary Vercel cron is removed. The RSVP implementation and stored Baserow data are intentionally retained so the feature can be restored later.
+
 `public/home-pooja-calendar.html` is a full-page calendar for non-members. It supports month navigation and displays each booked/event date with a compact host name, scheduled time, address, total attending guests, separate attending adult and kid counts, and aggregate Maybe guest count; phone numbers, email addresses, and RSVP identities remain private. Home Pooja bookings and AAYSSA event dates show a visible `RSVP` label beside accessible compact + (New RSVP), pencil (Edit RSVP), and share icon shortcuts, with action labels available to assistive technology and tooltips; Share RSVP copies the event-specific link directly and confirms on the button, shared `?rsvp=<reference>&date=<date>` links navigate to the event month and open its RSVP form automatically, using the host name in Home Pooja dialog titles and an AAYSSA Event title for blocked events. Confirmed hosts can share the same event-specific link from their member portal booking. Editing requires email-code verification. Preparation-only blocked dates do not accept RSVPs.
 
 ## Public Maaladharan Registration Embed

@@ -278,6 +278,7 @@
     const rsvpForm = document.getElementById("rsvpForm");
     const editRsvpDialog = document.getElementById("editRsvpDialog");
     const editRsvpForm = document.getElementById("editRsvpForm");
+    const rsvpEnabled = Date.now() < Date.parse("2026-11-01T04:00:00Z");
     let dates = [];
     let monthKeys = [];
     let currentMonthIndex = 0;
@@ -300,7 +301,7 @@
           return;
         }
         const sharedParams = new URLSearchParams(window.location.search);
-        const sharedReference = sharedParams.get("rsvp");
+        const sharedReference = rsvpEnabled ? sharedParams.get("rsvp") : null;
         const sharedDate = sharedParams.get("date");
         const sharedItem = sharedReference || sharedDate
           ? dates.find(item =>
@@ -370,7 +371,7 @@
           ? "AAYSSA Event RSVP"
           : `${rsvpLabel} Home Pooja RSVP`;
         const actionData = `data-rsvp-reference="${escapeHtml(rsvpReference)}" data-rsvp-date="${date}" data-rsvp-title="${escapeHtml(rsvpTitle)}" data-event="${escapeHtml(`${date} · ${rsvpLabel}`)}"`;
-        const rsvpButtons = rsvpReference
+        const rsvpButtons = rsvpEnabled && rsvpReference
           ? `<div class="rsvp-actions" aria-label="RSVP shortcuts">
                <span class="rsvp-actions-label">RSVP</span>
                <button type="button" class="rsvp-button" data-rsvp-action="new" ${actionData} aria-label="New RSVP" title="New RSVP"><span aria-hidden="true">+</span></button>
@@ -387,7 +388,7 @@
                <small class="day-host">${escapeHtml(hostName)}</small>
                ${eventTime ? `<small>${escapeHtml(eventTime)}</small>` : ""}
                ${eventAddress ? `<small class="day-address" title="${escapeHtml(eventAddress)}">${escapeHtml(eventAddress)}</small>` : ""}
-               <small class="rsvp-count">${attendingGuests} attending · ${attendingAdults} adults · ${attendingKids} kids${maybeGuests ? ` · ${maybeGuests} maybe` : ""}</small>
+               ${rsvpEnabled ? `<small class="rsvp-count">${attendingGuests} attending · ${attendingAdults} adults · ${attendingKids} kids${maybeGuests ? ` · ${maybeGuests} maybe` : ""}</small>` : ""}
              </div>`
           : availableDetail
             ? `<small>${escapeHtml(availableDetail)}</small>`
