@@ -6323,20 +6323,38 @@
           ? data.entries
           : [];
 
-      const requests =
+      const allRequests =
         entries.filter(item =>
           item.entryType === "Booking"
         );
+
+      const easternDateParts = Object.fromEntries(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date()).map(part => [part.type, part.value])
+      );
+      const easternToday = `${easternDateParts.year}-${easternDateParts.month}-${easternDateParts.day}`;
+      const completedRequests = allRequests.filter(item =>
+        item.poojaDate < easternToday
+      );
+      const requests = allRequests.filter(item =>
+        item.poojaDate >= easternToday
+      );
 
       const calendarDates =
         Array.isArray(data.calendar?.dates)
           ? data.calendar.dates
           : [];
 
-      const blocks =
+      const allBlocks =
         calendarDates.filter(item =>
           item.status === "Blocked"
         );
+      const completedBlocks = allBlocks.filter(item => item.date < easternToday);
+      const blocks = allBlocks.filter(item => item.date >= easternToday);
       const rsvpGroups = rsvpResponse?.ok && rsvpData.success && Array.isArray(rsvpData.groups)
         ? rsvpData.groups
         : [];
@@ -6433,7 +6451,7 @@
 
         <details class="home-pooja-admin-dropdown">
           <summary>
-            Home Pooja Bookings (${requests.length})
+            Current Home Pooja Bookings (${requests.length})
           </summary>
           <div class="home-pooja-admin-dropdown-content">
           ${
@@ -6516,14 +6534,14 @@
                   }
                 </div>
                 `).join("")
-              : "<p>No Home Pooja bookings.</p>"
+              : "<p>No current Home Pooja bookings.</p>"
           }
           </div>
         </details>
 
         <details class="home-pooja-admin-dropdown">
           <summary>
-            Administration Blocks (${blocks.length})
+            Current Administration Blocks (${blocks.length})
           </summary>
           <div class="home-pooja-admin-dropdown-content">
           ${
@@ -6580,8 +6598,37 @@
                   </form>
                 </div>
                 `).join("")
-              : "<p>No blocked dates.</p>"
+              : "<p>No current blocked dates.</p>"
           }
+          </div>
+        </details>
+
+        <details class="home-pooja-admin-dropdown">
+          <summary>
+            Completed History (${completedRequests.length + completedBlocks.length})
+          </summary>
+          <div class="home-pooja-admin-dropdown-content">
+            ${completedRequests.length
+              ? `<h4>Home Pooja Bookings (${completedRequests.length})</h4>${completedRequests.map(item => `
+                  <div class="maaladharan-registration">
+                    <strong>${escapeHtml(formatPortalDate(item.poojaDate))} · ${escapeHtml(item.preferredTime || "")}</strong>
+                    <span>${escapeHtml(item.requesterName)} · ${escapeHtml(displayHomePoojaStatus(item.status))}</span>
+                    <span>${escapeHtml(item.email)} · ${escapeHtml(item.phoneNumber)}</span>
+                    <span>${escapeHtml(item.poojaAddress)}</span>
+                  </div>
+                `).join("")}`
+              : ""}
+            ${completedBlocks.length
+              ? `<h4>Administration Blocks (${completedBlocks.length})</h4>${completedBlocks.map(item => `
+                  <div class="maaladharan-registration">
+                    <strong>${escapeHtml(formatPortalDate(item.date))}</strong>
+                    <span>${escapeHtml(formatHomePoojaBlockedLabel(item.reason))}</span>
+                  </div>
+                `).join("")}`
+              : ""}
+            ${completedRequests.length || completedBlocks.length
+              ? ""
+              : "<p>No completed history.</p>"}
           </div>
         </details>
         <div id="homePoojaAdminMessage"
