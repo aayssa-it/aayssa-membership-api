@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhajan Lyrics Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 20px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .song-navigation {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .song-navigation h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .song-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            list-style: none;
+        }
+
+        .song-list li a {
+            display: block;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: 500;
+        }
+
+        .song-list li a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .song-list li a.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .song-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .song-container.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .song-header {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .song-title {
+            font-size: 2em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .song-meta {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .lyrics {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        .lyrics-line {
+            margin-bottom: 12px;
+            padding-left: 10px;
+        }
+
+        .chorus {
+            font-weight: 600;
+            color: #764ba2;
+        }
+
+        .verse {
+            color: #333;
+        }
+
+        .refrain {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.05em;
+        }
+
+        .music-break {
+            font-style: italic;
+            color: #999;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .stanza {
+            margin-bottom: 25px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+
+        .back-to-top:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .song-container {
+                padding: 25px;
+            }
+
+            .song-title {
+                font-size: 1.5em;
+            }
+
+            .song-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🕉️ Bhajan Lyrics Collection</h1>
+            <p>Divine songs and devotional hymns</p>
+        </header>
+
+        <div class="song-navigation">
+            <h2>📖 Song List</h2>
+            <ul class="song-list" id="songList">
+                <li><a href="#vinai-theerkkum" class="song-link active" data-song="vinai-theerkkum">Vinai Theerkkum Naayagane</a></li>
+                <li><a href="#aaryavamsha-sujata" class="song-link" data-song="aaryavamsha-sujata">Aaryavamsha Sujata</a></li>
+                <!-- Add more songs here -->
+            </ul>
+        </div>
+
+        <!-- Song: Vinai Theerkkum Naayagane -->
+        <div class="song-container active" id="vinai-theerkkum">
+            <div class="song-header">
+                <h1 class="song-title">Vinai Theerkkum Naayagane</h1>
+                <div class="song-meta">
+                    <span>🎵 Devotional • Lord Ganesha</span>
+                </div>
+            </div>
+
+            <div class="lyrics">
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vinai theerkkum naayagane vanangi thuthippeen vinayagane</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vanangi thuthippeen vinayagane</div>
+                <div class="lyrics-line verse">vithvam alippavane vignam azhippavane vijayam koduppavane neeye vigneswarane</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vinai theerkkum naayagane endrum neeye</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane endrum neeye</div>
+                
+                <div class="music-break">(Music)</div>
+                
+                <div class="lyrics-line verse">kasthuri manjal umaiyaalin kaipattu uruppetru uyirpetru ganapathinaay ulagin athipathiyaanaay neeyo</div>
+                <div class="lyrics-line verse">thaai kaatha thanayan un thalai koytha paraman gajarajan thalai vaitha gajapathiyaanaay ulagin athipathiyaanaay</div>
+                <div class="lyrics-line verse">unnai naadum bhaktharukku garbhaggiragam ullae amarnthulla neeye swargam</div>
+                <div class="lyrics-line verse">en poojaikkum nee agaram unakku thoppukaranam naan paada nalvaazhvu arulanum</div>
+                
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vanangi thuthippeen vinayagane</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane</div>
+                
+                <div class="music-break">(Music)</div>
+                
+                <div class="lyrics-line verse">vaanaaga mannaaga neeraaga kaatraaga neruppaaga uruvaana gananaayaga panjamuganaayaga nee en</div>
+                <div class="lyrics-line verse">oonaaga unarvaaga udalaaga uyiraaga uravodu uravaana gunathaayaga pranava arulnaayaga</div>
+                <div class="lyrics-line verse">pirappe illaarai nee eduthukkolllu nee pirappil thaan mukthiyai koduthu arulu</div>
+                <div class="lyrics-line verse">un thumbikkai en abayam en vaazhkai un ubayam naan unnai paada bhakthi uthayam</div>
+                
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vanangi thuthippeen vinayagane</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vanangi thuthippeen vinayagane</div>
+                <div class="lyrics-line verse">vithvam alippavane vignam azhippavane vijayam koduppavane neeye vigneswarane</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane vinai theerkkum naayagane endrum neeye</div>
+                <div class="lyrics-line chorus">vinai theerkkum naayagane endrum neeye</div>
+            </div>
+        </div>
+
+        <!-- Song: Aaryavamsha Sujata -->
+        <div class="song-container" id="aaryavamsha-sujata">
+            <div class="song-header">
+                <h1 class="song-title">Aaryavamsha Sujata</h1>
+                <div class="song-meta">
+                    <span>🎵 Devotional • Sacred Hymn</span>
+                </div>
+            </div>
+
+            <div class="lyrics">
+                <div class="lyrics-line refrain">Aaryavamsha Sujata</div>
+                
+                <div class="stanza">
+                    <div class="lyrics-line chorus">Aaryavamsha Sujata Namo Namo</div>
+                    <div class="lyrics-line verse">Veeryadivya Vilasa Namo Namo</div>
+                    <div class="lyrics-line verse">Shaashvataashrita Deva Namo Namo.. Bahukoti</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Bhootavandita Deva Namo Namo</div>
+                    <div class="lyrics-line verse">Bheeti Naashanaroopa Namo Namo</div>
+                    <div class="lyrics-line verse">Mohanaambuja Paada Namo Namo.. Manikantha</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Raajasevaka Veera Namo Namo</div>
+                    <div class="lyrics-line verse">Vaaji Vaarana Vaha Namo Namo</div>
+                    <div class="lyrics-line verse">Geeta Nrtya Vinoda Namo Namo.. Veeraadiveera</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Ghora Paapa Vinaasha Namo Namo</div>
+                    <div class="lyrics-line verse">Haara Noopura Dhaari Namo Namo</div>
+                    <div class="lyrics-line verse">Jyotishaarchita Peetha Namo Namo.. Jayasheela</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Dhaanya Mangala Roopa Namo Namo</div>
+                    <div class="lyrics-line verse">Kaanaantara Vaasa Namo Namo</div>
+                    <div class="lyrics-line verse">Vaasavaarshrita Devaa Namo Namo.. Nrupadaasa</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Kaanta Shringa Nivaasa Namo Namo</div>
+                    <div class="lyrics-line verse">Shaanti Daayaka Deva Namo Namo</div>
+                    <div class="lyrics-line verse">Deva Vandya Gireesha Namo Namo.. Paradeva</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Moola Mantra Swaroopa Namo Namo</div>
+                    <div class="lyrics-line verse">Baala Vigraha Moola Namo Namo</div>
+                    <div class="lyrics-line verse">Putradaayaka Deva Namo Namo.. Varabaala</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Eesha Keshava Soono Namo Namo</div>
+                    <div class="lyrics-line verse">Paasha Janma Vinaasha Namo Namo</div>
+                    <div class="lyrics-line verse">Aarti Naashana Moortey Namo Namo.. Divyaroopa</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Deepa Mangala Jyoti Namo Namo</div>
+                    <div class="lyrics-line verse">Tooya Ambala Leela Namo Namo</div>
+                    <div class="lyrics-line verse">Deva Kunjari Paada Namo Namo.. Arul Taaraai</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template for adding more songs -->
+        <!--
+        <div class="song-container" id="song-id">
+            <div class="song-header">
+                <h1 class="song-title">Song Title Here</h1>
+                <div class="song-meta">
+                    <span>🎵 Genre • Deity</span>
+                </div>
+            </div>
+
+            <div class="lyrics">
+                <div class="lyrics-line chorus">Chorus line</div>
+                <div class="lyrics-line verse">Verse line</div>
+                <div class="lyrics-line refrain">Refrain line</div>
+                <div class="music-break">(Music)</div>
+            </div>
+        </div>
+        -->
+    </div>
+
+    <a href="#" class="back-to-top" title="Back to top">↑</a>
+
+    <script>
+        // Navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const songLinks = document.querySelectorAll('.song-link');
+            const songContainers = document.querySelectorAll('.song-container');
+
+            songLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all links and containers
+                    songLinks.forEach(l => l.classList.remove('active'));
+                    songContainers.forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked link
+                    this.classList.add('active');
+                    
+                    // Show corresponding song
+                    const songId = this.getAttribute('data-song');
+                    const targetSong = document.getElementById(songId);
+                    if (targetSong) {
+                        targetSong.classList.add('active');
+                        
+                        // Smooth scroll to song
+                        targetSong.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+
+            // Back to top functionality
+            const backToTop = document.querySelector('.back-to-top');
+            backToTop.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            // Handle direct URL hash navigation
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                const targetLink = document.querySelector(`[data-song="${hash}"]`);
+                if (targetLink) {
+                    targetLink.click();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
