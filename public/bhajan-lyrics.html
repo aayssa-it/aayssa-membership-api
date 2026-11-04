@@ -49,12 +49,54 @@
             padding: 25px;
             margin-bottom: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
         }
 
         .song-navigation h2 {
             color: #667eea;
             margin-bottom: 20px;
             font-size: 1.5em;
+        }
+
+        .song-list-title {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
         .song-list {
@@ -64,8 +106,18 @@
             list-style: none;
         }
 
+        .song-list li {
+            transition: all 0.3s ease;
+        }
+
+        .song-list li.hidden {
+            display: none;
+        }
+
         .song-list li a {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 10px;
             padding: 15px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -84,18 +136,23 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
+        .category-icon {
+            font-size: 1.2em;
+        }
+
         .song-container {
             background: white;
             border-radius: 12px;
             padding: 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            display: none;
             margin-bottom: 30px;
+            animation: fadeIn 0.5s ease-in;
+            scroll-margin-top: 100px;
+            transition: all 0.3s ease;
         }
 
-        .song-container.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in;
+        .song-container.hidden {
+            display: none;
         }
 
         @keyframes fadeIn {
@@ -124,6 +181,22 @@
         .song-meta {
             color: #666;
             font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
         }
 
         .lyrics {
@@ -178,10 +251,23 @@
             text-decoration: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             transition: transform 0.2s;
+            font-size: 1.5em;
         }
 
         .back-to-top:hover {
             transform: scale(1.1);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .no-results.show {
+            display: block;
         }
 
         @media (max-width: 768px) {
@@ -200,6 +286,20 @@
             .song-list {
                 grid-template-columns: 1fr;
             }
+
+            .song-navigation {
+                position: relative;
+                top: 0;
+            }
+
+            .category-filter {
+                justify-content: center;
+            }
+
+            .filter-btn {
+                flex: 1;
+                min-width: 100px;
+            }
         }
     </style>
 </head>
@@ -211,19 +311,50 @@
         </header>
 
         <div class="song-navigation">
-            <h2>📖 Song List</h2>
+            <h2>📖 Song Categories</h2>
+            
+            <!-- Category Filter -->
+            <div class="category-filter">
+                <button class="filter-btn active" data-category="all">All Songs</button>
+                <button class="filter-btn" data-category="vinayagar">🐘 Vinayagar</button>
+                <button class="filter-btn" data-category="ayyappa">ૐ Ayyappa</button>
+                <button class="filter-btn" data-category="amman">🌺 Amman</button>
+            </div>
+
+            <h3 class="song-list-title">Songs</h3>
             <ul class="song-list" id="songList">
-                <li><a href="#vinai-theerkkum" class="song-link active" data-song="vinai-theerkkum">Vinai Theerkkum Naayagane</a></li>
-                <li><a href="#aaryavamsha-sujata" class="song-link" data-song="aaryavamsha-sujata">Aaryavamsha Sujata</a></li>
-                <!-- Add more songs here -->
+                <li data-category="vinayagar">
+                    <a href="#vinai-theerkkum" class="song-link">
+                        <span class="category-icon">🐘</span>
+                        Vinai Theerkkum Naayagane
+                    </a>
+                </li>
+                <li data-category="ayyappa">
+                    <a href="#aaryavamsha-sujata" class="song-link">
+                        <span class="category-icon">ૐ</span>
+                        Aaryavamsha Sujata
+                    </a>
+                </li>
+                <li data-category="amman">
+                    <a href="#janani-janani" class="song-link">
+                        <span class="category-icon">🌺</span>
+                        Janani Janani
+                    </a>
+                </li>
+                <!-- Add more songs here with data-category attribute -->
             </ul>
+            <div class="no-results" id="noResults">No songs found in this category</div>
         </div>
 
-        <!-- Song: Vinai Theerkkum Naayagane -->
-        <div class="song-container active" id="vinai-theerkkum">
+        <!-- Song 1: Vinai Theerkkum Naayagane (Vinayagar) -->
+        <div class="song-container" id="vinai-theerkkum" data-category="vinayagar">
             <div class="song-header">
                 <h1 class="song-title">Vinai Theerkkum Naayagane</h1>
                 <div class="song-meta">
+                    <span class="category-badge">
+                        <span class="category-icon">🐘</span>
+                        Vinayagar
+                    </span>
                     <span>🎵 Devotional • Lord Ganesha</span>
                 </div>
             </div>
@@ -260,12 +391,16 @@
             </div>
         </div>
 
-        <!-- Song: Aaryavamsha Sujata -->
-        <div class="song-container" id="aaryavamsha-sujata">
+        <!-- Song 2: Aaryavamsha Sujata (Ayyappa) -->
+        <div class="song-container" id="aaryavamsha-sujata" data-category="ayyappa">
             <div class="song-header">
                 <h1 class="song-title">Aaryavamsha Sujata</h1>
                 <div class="song-meta">
-                    <span>🎵 Devotional • Sacred Hymn</span>
+                    <span class="category-badge">
+                        <span class="category-icon">ૐ</span>
+                        Ayyappa
+                    </span>
+                    <span>🎵 Devotional • Lord Ayyappa</span>
                 </div>
             </div>
 
@@ -328,20 +463,140 @@
             </div>
         </div>
 
+        <!-- Song 3: Janani Janani (Amman) -->
+        <div class="song-container" id="janani-janani" data-category="amman">
+            <div class="song-header">
+                <h1 class="song-title">Janani Janani</h1>
+                <div class="song-meta">
+                    <span class="category-badge">
+                        <span class="category-icon">🌺</span>
+                        Amman
+                    </span>
+                    <span>🎵 Devotional • Goddess Shakti</span>
+                </div>
+            </div>
+
+            <div class="lyrics">
+                <div class="stanza">
+                    <div class="lyrics-line verse">Shivah Shakthya Yukto Yadi</div>
+                    <div class="lyrics-line verse">Bhavati Shaktah Prabhavitum</div>
+                    <div class="lyrics-line verse">Na Che devam Devo Na Khalu</div>
+                    <div class="lyrics-line verse">Kusalah Ahspanditum Abi ahh</div>
+                    <div class="lyrics-line verse">Athasth Tvam Aradhyam</div>
+                    <div class="lyrics-line verse">Hari-Hara-Virinchadibhir Api</div>
+                    <div class="lyrics-line verse">Pranantum Stotum Vaa Katham</div>
+                    <div class="lyrics-line verse">Akrta-Punyah Prabhavati ahhhh</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Janani Janani</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Oru Maan Mazhuvum Siru Koon Piraiyum</div>
+                    <div class="lyrics-line verse">Sadai Vaar Kuzhalum Pidai Vaaganamum</div>
+                    <div class="lyrics-line verse">Sadai Vaar Kuzhalum</div>
+                    <div class="lyrics-line verse">Pidai Vaaganamum (Chorus)</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Konda Naayaganin Kulir Daegathilae</div>
+                    <div class="lyrics-line verse">Nindra Naayagiyae Ida Baagathilae</div>
+                    <div class="lyrics-line verse">Nindra Naayagiyae Ida</div>
+                    <div class="lyrics-line verse">Baagathilae (Chorus)</div>
+                    <div class="lyrics-line verse">Jagan Mohini Nee Simma Vaahini Nee</div>
+                    <div class="lyrics-line verse">Jagan Mohini Nee Simma</div>
+                    <div class="lyrics-line verse">Vaahini Nee (Chorus)</div>
+                    <div class="lyrics-line verse">Jagan Mohini Nee Simma Vaahini Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Chathur Vaethangalum Panja Boothangalum</div>
+                    <div class="lyrics-line verse">Shan Maarkkangalum Shaptha Theerthangalum</div>
+                    <div class="lyrics-line verse">Shan Maarkkangalum Shaptha</div>
+                    <div class="lyrics-line verse">Theerthangalum (Chorus)</div>
+                    <div class="lyrics-line verse">Ashta Yogangalum Nava Yaagangalum</div>
+                    <div class="lyrics-line verse">Thozhum Poongazhalae Malai Maamagalae</div>
+                    <div class="lyrics-line verse">Thozhum Poongazhalae</div>
+                    <div class="lyrics-line verse">Malai Maamagalae (Chorus)</div>
+                    <div class="lyrics-line verse">Alai Maa Magal Nee Kalai Maa Magal Nee</div>
+                    <div class="lyrics-line verse">Alai Maa Magal Nee Kalai</div>
+                    <div class="lyrics-line verse">Maa Magal Nee (Chorus)</div>
+                    <div class="lyrics-line verse">Alai Maa Magal Nee Kalai Maa Magal Nee</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Swarna Raegaiyudan Swayamaagi Vantha</div>
+                    <div class="lyrics-line verse">Linga Roopiniyae Mookambigaiyae</div>
+                    <div class="lyrics-line verse">Linga Roopiniyae Mookambigaiyae (Chorus)</div>
+                    <div class="lyrics-line verse">Swarna Raegaiyudan Swayamaagi Vantha</div>
+                    <div class="lyrics-line verse">Linga Roopiniyae Mookambigaiyae</div>
+                    <div class="lyrics-line verse">Linga Roopiniyae Mookambigaiyae (Chorus)</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Pala Sthothirangal Dharma Saasthirangal</div>
+                    <div class="lyrics-line verse">Panindae Thuvathum Manimaethirangal</div>
+                    <div class="lyrics-line verse">Panindae Thuvathum</div>
+                    <div class="lyrics-line verse">Manimaethirangal (Chorus)</div>
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee…ahhh</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee Sarva Moatchamum Nee</div>
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee Sarva</div>
+                    <div class="lyrics-line verse">Moatchamum Nee (Chorus)</div>
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee Sarva Moatchamum Nee</div>
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee Sarva</div>
+                    <div class="lyrics-line verse">Moatchamum Nee (Chorus)</div>
+                    <div class="lyrics-line verse">Sakthi Peetamum Nee Sarva Moatchamum Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                    <div class="lyrics-line verse">Jagath Kaarani Nee Paripoorani Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Janani Janani</div>
+                </div>
+
+                <div class="stanza">
+                    <div class="lyrics-line chorus">Janani Janani Jagam Nee Agam Nee</div>
+                    <div class="lyrics-line chorus">Janani Janani Janani Janani</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Template for adding more songs -->
         <!--
-        <div class="song-container" id="song-id">
+        <div class="song-container" id="song-id" data-category="category-name">
             <div class="song-header">
                 <h1 class="song-title">Song Title Here</h1>
                 <div class="song-meta">
+                    <span class="category-badge">
+                        <span class="category-icon">🌺</span>
+                        Category Name
+                    </span>
                     <span>🎵 Genre • Deity</span>
                 </div>
             </div>
 
             <div class="lyrics">
-                <div class="lyrics-line chorus">Chorus line</div>
-                <div class="lyrics-line verse">Verse line</div>
-                <div class="lyrics-line refrain">Refrain line</div>
+                <div class="stanza">
+                    <div class="lyrics-line chorus">Chorus line</div>
+                    <div class="lyrics-line verse">Verse line</div>
+                    <div class="lyrics-line refrain">Refrain line</div>
+                </div>
                 <div class="music-break">(Music)</div>
             </div>
         </div>
@@ -351,50 +606,43 @@
     <a href="#" class="back-to-top" title="Back to top">↑</a>
 
     <script>
-        // Navigation functionality
+        // Navigation and filtering functionality
         document.addEventListener('DOMContentLoaded', function() {
-            const songLinks = document.querySelectorAll('.song-link');
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const songListItems = document.querySelectorAll('.song-list li');
             const songContainers = document.querySelectorAll('.song-container');
+            const songLinks = document.querySelectorAll('.song-link');
+            const noResults = document.getElementById('noResults');
 
-            songLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
+            // Category filtering
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
                     
-                    // Remove active class from all links and containers
-                    songLinks.forEach(l => l.classList.remove('active'));
-                    songContainers.forEach(c => c.classList.remove('active'));
-                    
-                    // Add active class to clicked link
+                    // Update active button
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Show corresponding song
-                    const songId = this.getAttribute('data-song');
-                    const targetSong = document.getElementById(songId);
-                    if (targetSong) {
-                        targetSong.classList.add('active');
-                        
-                        // Smooth scroll to song
-                        targetSong.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                });
-            });
-
-            // Back to top functionality
-            const backToTop = document.querySelector('.back-to-top');
-            backToTop.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            // Handle direct URL hash navigation
-            if (window.location.hash) {
-                const hash = window.location.hash.substring(1);
-                const targetLink = document.querySelector(`[data-song="${hash}"]`);
-                if (targetLink) {
-                    targetLink.click();
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+                    // Filter songs
+                    let visibleCount = 0;
+                    
+                    songListItems.forEach(item => {
+                        const itemCategory = item.getAttribute('data-category');
+                        if (category === 'all' || itemCategory === category) {
+                            item.classList.remove('hidden');
+                            visibleCount++;
+                        } else {
+                            item.classList.add('hidden');
+                        }
+                    });
+                    
+                    songContainers.forEach(container => {
+                        const containerCategory = container.getAttribute('data-category');
+                        if (category === 'all' || containerCategory === category) {
+                            container.classList.remove('hidden');
+                        } else {
+                            container.classList.add('hidden');
+                        }
+                    });
+                    
+                    // Show/hide
