@@ -231,11 +231,8 @@ async function discoverSpouseEmailFieldKey() {
 export async function getAuthenticatedMember(req) {
   assertServerConfig();
 
-  const cookies =
-    parseCookies(req.headers.cookie || "");
-
   const accessToken =
-    cookies.aayssa_access;
+    getRequestAccessToken(req);
 
   if (!accessToken) {
     return {
@@ -310,6 +307,29 @@ export async function getAuthenticatedMember(req) {
       ).toLowerCase(),
     memberRow
   };
+}
+
+export function getRequestAccessToken(req) {
+  const cookies =
+    parseCookies(req.headers.cookie || "");
+
+  if (cookies.aayssa_access) {
+    return cookies.aayssa_access;
+  }
+
+  const header =
+    String(req.headers.authorization || "");
+
+  const match =
+    header.match(/^Bearer\s+([A-Za-z0-9._~+/=-]+)$/);
+
+  return match ? match[1] : "";
+}
+
+export function isMobileClient(req) {
+  return String(req.headers["x-client"] || "")
+    .trim()
+    .toLowerCase() === "mobile";
 }
 
 export async function fetchFamilyVolunteerRows(memberRowId) {

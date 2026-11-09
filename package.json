@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "migrate:volunteers:dry-run": "node scripts/migrate-volunteers.cjs --dry-run",
-    "migrate:volunteers:apply": "node scripts/migrate-volunteers.cjs --apply"
+    "migrate:volunteers:apply": "node scripts/migrate-volunteers.cjs --apply",
+    "test": "node --test",
+    "check:zeffy-campaigns": "node scripts/check-zeffy-campaigns.cjs",
+    "sync:zeffy-campaigns": "node scripts/sync-zeffy-campaigns.mjs"
   }
 }
