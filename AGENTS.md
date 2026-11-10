@@ -24,6 +24,9 @@ Public account deletion request:
 Public privacy policy:
 `https://portal.atlantaayyappasevasangam.org/privacy-policy.html`
 
+Public child safety standards:
+`https://portal.atlantaayyappasevasangam.org/child-safety-standards.html`
+
 Public Home Pooja calendar:
 `https://portal.atlantaayyappasevasangam.org/home-pooja-calendar.html`
 
@@ -396,6 +399,10 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 ## Public Privacy Policy
 
 `public/privacy-policy.html` is the public privacy notice for the membership portal and related forms. It describes collected data, purposes, service-provider sharing, family information, essential sessions, retention, security, member choices, and the account-deletion process. The login, authenticated portal, and deletion page link to it.
+
+## Public Child Safety Standards
+
+`public/child-safety-standards.html` is AAYSSA's externally published standard against child sexual abuse and exploitation (CSAE). It defines prohibited content and conduct, reporting paths, enforcement actions, legal escalation, record handling, and the designated child-safety contact. The page links to the feedback reporting form and privacy policy.
 
 ## Public Home Pooja Calendar
 
