@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request Account Deletion | AAYSSA</title>
+  <meta name="description" content="Request deletion of your AAYSSA member account and associated personal data.">
+  <style>
+    :root { color-scheme: light; --maroon: #7b2607; --orange: #b36b00; --ink: #30251f; --muted: #6b625d; --line: #ead8c5; --cream: #fffaf3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f7f4f0; color: var(--ink); font-family: Arial, Helvetica, sans-serif; line-height: 1.55; }
+    header { padding: 32px 20px; background: linear-gradient(135deg, var(--maroon), #a64b0a); color: #fff; text-align: center; }
+    header h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 5vw, 2.35rem); }
+    header p { margin: 0; }
+    main { width: min(760px, calc(100% - 28px)); margin: 28px auto; }
+    .card { padding: clamp(22px, 5vw, 38px); background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 28px rgba(70, 40, 20, .08); }
+    h2 { color: var(--maroon); font-size: 1.25rem; margin: 28px 0 10px; }
+    h2:first-child { margin-top: 0; }
+    ul { padding-left: 22px; }
+    .notice { padding: 14px 16px; background: var(--cream); border-left: 4px solid var(--orange); border-radius: 7px; }
+    label { display: block; margin: 16px 0 6px; font-weight: 700; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #cfc4ba; border-radius: 7px; font: inherit; }
+    input:focus, textarea:focus { outline: 3px solid rgba(179, 107, 0, .18); border-color: var(--orange); }
+    textarea { min-height: 100px; resize: vertical; }
+    button { width: 100%; margin-top: 20px; padding: 14px 18px; border: 0; border-radius: 8px; background: var(--orange); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+    button:hover { background: #914f00; }
+    .small { color: var(--muted); font-size: .9rem; }
+    footer { padding: 8px 20px 32px; text-align: center; color: var(--muted); font-size: .9rem; }
+    footer a { color: var(--maroon); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Request Account Deletion</h1>
+    <p>Atlanta Ayyappa Seva Sangam (AAYSSA)</p>
+  </header>
+  <main>
+    <section class="card">
+      <h2>Delete your account and personal data</h2>
+      <p>Use this page to request deletion of your AAYSSA membership portal account and personal information associated with it. You do not need to be signed in.</p>
+
+      <div class="notice">
+        A membership is maintained as a household record. If family members share the same account, AAYSSA will confirm whether the request applies to the entire household or only the requesting person's information before deleting data.
+      </div>
+
+      <h2>Information covered by the request</h2>
+      <ul>
+        <li>Membership profile and contact information</li>
+        <li>Family-member details, preferences, and volunteer interests</li>
+        <li>Program registrations, Home Pooja requests, and related portal records</li>
+        <li>Authentication access associated with the membership account</li>
+      </ul>
+      <p class="small">Records that AAYSSA must retain for legal, financial, fraud-prevention, or nonprofit reporting obligations may be kept only for the required period. For example, donation transaction records may need to be retained even after portal access and other personal data are deleted.</p>
+
+      <h2>Submit your request</h2>
+      <p>Enter enough information for AAYSSA to locate the account. Selecting the button opens a prepared email to the AAYSSA team. Send the email from an address registered on the account whenever possible.</p>
+      <form id="deletionRequestForm">
+        <label for="fullName">Full name</label>
+        <input id="fullName" name="fullName" autocomplete="name" required>
+
+        <label for="email">Registered email address</label>
+        <input id="email" name="email" type="email" autocomplete="email" required>
+
+        <label for="details">Additional details (optional)</label>
+        <textarea id="details" name="details" placeholder="For example, identify whether this request covers the entire household membership."></textarea>
+
+        <button type="submit">Create Deletion Request Email</button>
+      </form>
+
+      <h2>What happens next</h2>
+      <p>AAYSSA will verify the request using the registered contact information before deleting data. The team will confirm when the request is complete or explain any information that must be retained.</p>
+      <p class="small">If the button does not open your email application, email <a href="mailto:aayssa.official@gmail.com?subject=AAYSSA%20Account%20Deletion%20Request">aayssa.official@gmail.com</a> with the subject “AAYSSA Account Deletion Request.”</p>
+    </section>
+  </main>
+  <footer><a href="/login-embed.html">Return to Member Login</a></footer>
+  <script>
+    document.getElementById("deletionRequestForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const body = [
+        "I request deletion of my AAYSSA membership portal account and associated personal data.",
+        "",
+        `Full name: ${String(form.get("fullName") || "").trim()}`,
+        `Registered email: ${String(form.get("email") || "").trim()}`,
+        `Additional details: ${String(form.get("details") || "None").trim() || "None"}`,
+        "",
+        "Please contact me through my registered information to verify this request."
+      ].join("\n");
+      window.location.href = `mailto:aayssa.official@gmail.com?subject=${encodeURIComponent("AAYSSA Account Deletion Request")}&body=${encodeURIComponent(body)}`;
+    });
+  </script>
+</body>
+</html>

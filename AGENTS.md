@@ -18,6 +18,9 @@ Public member login:
 Public feedback form:
 `https://portal.atlantaayyappasevasangam.org/feedback.html`
 
+Public account deletion request:
+`https://portal.atlantaayyappasevasangam.org/delete-account.html`
+
 Public Home Pooja calendar:
 `https://portal.atlantaayyappasevasangam.org/home-pooja-calendar.html`
 
@@ -382,6 +385,10 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 ## Public Feedback Form
 
 `public/feedback.html` is a standalone hosted form. It supports anonymous submission by default, optional name/email/phone, conditional permission to contact, required category selection, spam honeypot protection, and a confirmation screen.
+
+## Public Account Deletion Request
+
+`public/delete-account.html` is a standalone public page that members can use without signing in to request deletion of their portal account and associated personal data. It explains household-account verification, data covered by deletion, and legally required retention, then prepares an email to `aayssa.official@gmail.com`. The public login and authenticated portal link to this page.
 
 ## Public Home Pooja Calendar
 
