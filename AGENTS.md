@@ -21,6 +21,9 @@ Public feedback form:
 Public account deletion request:
 `https://portal.atlantaayyappasevasangam.org/delete-account.html`
 
+Public privacy policy:
+`https://portal.atlantaayyappasevasangam.org/privacy-policy.html`
+
 Public Home Pooja calendar:
 `https://portal.atlantaayyappasevasangam.org/home-pooja-calendar.html`
 
@@ -389,6 +392,10 @@ When this file changes, copy the updated embed into GoDaddy for the public login
 ## Public Account Deletion Request
 
 `public/delete-account.html` is a standalone public page that members can use without signing in to request deletion of their portal account and associated personal data. It explains household-account verification, data covered by deletion, and legally required retention, then prepares an email to `aayssa.official@gmail.com`. The public login and authenticated portal link to this page.
+
+## Public Privacy Policy
+
+`public/privacy-policy.html` is the public privacy notice for the membership portal and related forms. It describes collected data, purposes, service-provider sharing, family information, essential sessions, retention, security, member choices, and the account-deletion process. The login, authenticated portal, and deletion page link to it.
 
 ## Public Home Pooja Calendar
 

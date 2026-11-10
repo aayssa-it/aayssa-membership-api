@@ -13,6 +13,7 @@ Source code and release history are maintained in the [AAYSSA IT GitHub organiza
 - [Home Pooja calendar](https://portal.atlantaayyappasevasangam.org/home-pooja-calendar.html)
 - [Feedback and suggestions](https://portal.atlantaayyappasevasangam.org/feedback.html)
 - [Account deletion request](https://portal.atlantaayyappasevasangam.org/delete-account.html)
+- [Privacy policy](https://portal.atlantaayyappasevasangam.org/privacy-policy.html)
 - [Public website](https://atlantaayyappasevasangam.org)
 
 ## Highlights
