@@ -8,6 +8,9 @@ import {
   handleAdminFeedback
 } from "./_lib/feedback.js";
 import {
+  handleAdminCampaigns
+} from "./_lib/campaigns.js";
+import {
   VOLUNTEER_FIELDS,
   VOLUNTEERS_TABLE_ID,
   mapVolunteerRow
@@ -29,6 +32,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "feedback") {
     return handleAdminFeedback(req, res);
+  }
+
+  if (req.query?.resource === "app-campaigns") {
+    return handleAdminCampaigns(req, res);
   }
 
   if (req.method !== "GET") {

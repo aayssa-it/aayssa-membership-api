@@ -18,6 +18,12 @@ import {
 import {
   handlePublicRsvp
 } from "./_lib/rsvp.js";
+import {
+  handlePublicCampaigns
+} from "./_lib/campaigns.js";
+import {
+  handlePublicDonations
+} from "./_lib/donations.js";
 
 const AAYSSA_FAMILY_WHATSAPP_URL =
   "https://chat.whatsapp.com/CDH3nm4UUslCpLUxeoBVab?mode=gi_t";
@@ -73,6 +79,13 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "rsvp") {
     return handlePublicRsvp(req, res);
+  }
+  if (req.query?.resource === "campaigns") {
+    return handlePublicCampaigns(req, res);
+  }
+
+  if (req.query?.resource === "donations") {
+    return handlePublicDonations(req, res);
   }
 
   if (req.method !== "POST") {

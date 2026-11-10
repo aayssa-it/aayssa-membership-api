@@ -1,3 +1,7 @@
+import {
+  isMobileClient
+} from "./_lib/aayssa.js";
+
 export default async function handler(req, res) {
   const allowedOrigins = [
     "https://atlantaayyappasevasangam.org",
@@ -114,6 +118,15 @@ export default async function handler(req, res) {
         success: false,
         message:
           "The passcode is invalid or expired."
+      });
+    }
+
+    if (isMobileClient(req)) {
+      return res.status(200).json({
+        success: true,
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresIn: Number(data.expires_in) || 3600
       });
     }
 
