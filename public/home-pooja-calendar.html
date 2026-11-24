@@ -357,7 +357,7 @@
           ? item?.eventName || item?.reason || "AAYSSA Event"
           : item?.requesterName || "Home Pooja";
         const eventTime = status === "Blocked"
-          ? item?.eventTime || item?.time || ""
+          ? ""
           : item?.bookingTime || item?.time || "";
         const eventAddress = status === "Blocked"
           ? item?.eventAddress || ""
