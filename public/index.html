@@ -1278,6 +1278,27 @@
       font-weight: 800;
     }
 
+    .irumudi-summary-card {
+      margin: 12px 0;
+      padding: 14px 16px;
+      border: 1px solid #b9d9c1;
+      border-radius: 10px;
+      background: #f0faf2;
+      color: #245f34;
+    }
+
+    .irumudi-summary-card .maaladharan-registration-meta {
+      color: #356c43;
+    }
+
+    .irumudi-summary-card + .irumudi-form {
+      margin: -5px 0 14px;
+      padding: 15px;
+      border: 1px solid #b9d9c1;
+      border-radius: 10px;
+      background: #fff;
+    }
+
     .inline-message {
       margin-top: 12px;
       font-size: 13px;
@@ -4412,10 +4433,10 @@
         ${data?.error ? `<p class="inline-message error">${escapeHtml(data.error)}</p>` : ""}
         <div id="irumudiMessage" class="inline-message" role="status"></div>
         ${participants.length
-          ? participants.map(renderIrumudiParticipantForm).join("")
+          ? participants.map(renderIrumudiParticipantCard).join("")
           : `<p class="section-description">No Maaladharan response was found. Add each Swamy or devotee joining the Tampa Yatra.</p>`}
-        <details class="home-pooja-admin-dropdown">
-          <summary>Add another Swamy or devotee</summary>
+        <details class="home-pooja-admin-dropdown irumudi-add-panel">
+          <summary>+ Add Swamy or Devotee</summary>
           <div class="home-pooja-admin-dropdown-content">
             ${renderIrumudiParticipantForm({ source: "Additional Devotees", category: "Non-Swamy", participation: "Tampa without Irumudi" }, true)}
           </div>
@@ -4423,12 +4444,32 @@
       </section>`;
   }
 
-  function renderIrumudiParticipantForm(participant = {}, isNew = false) {
+  function renderIrumudiParticipantCard(participant) {
+    const padi = participant.category === "Swamy" && participant.currentPadi != null
+      ? ` · Current Padi ${escapeHtml(participant.currentPadi)}`
+      : "";
+    return `
+      <div class="irumudi-summary-card">
+        <div class="maaladharan-registration-heading">
+          <div>
+            <strong>${escapeHtml(participant.participantName || "Participant")}</strong>
+            <div class="maaladharan-registration-meta">
+              ${escapeHtml(participant.participation || "Selection needed")}
+              · ${escapeHtml(participant.category || "Swamy")}${padi}
+            </div>
+          </div>
+          <button class="small-action-button edit-irumudi-button" type="button">Edit</button>
+        </div>
+      </div>
+      ${renderIrumudiParticipantForm(participant, false, true)}`;
+  }
+
+  function renderIrumudiParticipantForm(participant = {}, isNew = false, hidden = false) {
     const isAayssa = participant.participation === "AAYSSA Irumudi";
     const isSwamy = participant.category === "Swamy";
     const showAgreement = participant.category === "Non-Swamy" && participant.gender === "Female" && participant.participation === "Tampa with Irumudi";
     return `
-      <form class="maaladharan-form irumudi-form" data-new="${isNew}" data-id="${escapeHtml(participant.id || "")}" data-maaladharan-id="${escapeHtml(participant.maaladharanId || "")}">
+      <form class="maaladharan-form irumudi-form" data-new="${isNew}" data-id="${escapeHtml(participant.id || "")}" data-maaladharan-id="${escapeHtml(participant.maaladharanId || "")}" ${hidden ? "hidden" : ""}>
         <div class="form-field full-width">
           <label>Participation</label>
           <select name="participation" required>
@@ -4464,6 +4505,15 @@
   }
 
   function setupIrumudiForms() {
+    document.querySelectorAll(".edit-irumudi-button").forEach(button => {
+      button.addEventListener("click", () => {
+        const form = button.closest(".irumudi-summary-card")?.nextElementSibling;
+        if (!form?.classList.contains("irumudi-form")) return;
+        form.hidden = !form.hidden;
+        button.textContent = form.hidden ? "Edit" : "Close";
+        if (!form.hidden) form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    });
     document.querySelectorAll(".irumudi-form").forEach(form => {
       const updateVisibility = () => {
         const aayssa = form.elements.participation.value === "AAYSSA Irumudi";
