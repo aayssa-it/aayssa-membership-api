@@ -59,6 +59,7 @@ Do not expose server-side tokens in browser code.
 - `BASEROW_MAALADHARAN_TABLE_ID` (defaults to `1210688`)
 - `BASEROW_HOME_POOJA_TABLE_ID` (defaults to `1240702`)
 - `BASEROW_RSVP_TABLE_ID` (defaults to `1264849`)
+- `BASEROW_IRUMUDI_TABLE_ID` (defaults to `1342788`)
 - `BASEROW_FEEDBACK_TABLE_ID` (defaults to `1262224`)
 - `HOME_POOJA_PUBLIC_ENABLED` is a legacy public-API gate and should remain unset/false because no standalone Home Pooja page is planned.
 - `ZEFFY_API_KEY`
@@ -97,6 +98,11 @@ Home Pooja booking table:
 - Public bookings require Supabase email verification; matching members are linked by normalized email.
 - New bookings are stored immediately with `Approved` status on a first-come, first-served basis; `Cancelled` and `Blocked` remain available for calendar management.
 - Legacy `Submitted` Home Pooja rows are treated as booked so dates claimed before the workflow change remain reserved.
+
+Irumudi Kettu table:
+- Name: `AAYSSA_Irumudi_Kettu`
+- Table ID: `1342788`
+- Stores editable Maaladharan-derived confirmations and additional Tampa devotees, including Swamy/non-Swamy classification, contact details, current Padi count, participation choice, and the required Tampa Irumudi/accommodation agreement.
 - Approved bookings are exposed on the public calendar with host name, scheduled time, and address; email and phone remain private.
 
 Feedback table:
@@ -192,9 +198,13 @@ The old Supabase magic-link callback route was removed after switching to passco
 
 - `GET /api/my-volunteers?resource=rsvp`
   - Authenticated member endpoint returning RSVP identities and contact details only for Home Pooja bookings linked to that member's family.
+- `GET|POST|PATCH|DELETE /api/my-volunteers?resource=irumudi`
+  - Authenticated household Irumudi Kettu workflow. GET merges current Maaladharan registrations with saved confirmations; writes upsert responses or cancel additional-devotee rows in table `1342788`.
 
 - `GET /api/admin-members?resource=rsvp`
   - Board/Admin-only view of all current Home Pooja and AAYSSA event RSVP groups, summaries, identities, contact details, and notes.
+- `GET /api/admin-members?resource=irumudi`
+  - Board/Admin-only Tampa and AAYSSA Irumudi headcount, including Swamy/non-Swamy and with/without-Irumudi breakdowns plus participant details.
 
 - `GET|PATCH /api/admin-members?resource=feedback`
   - Board/Admin-only feedback queue. GET returns feedback and supported statuses; PATCH updates one row's status.
@@ -287,6 +297,7 @@ Member portal (`public/index.html`) includes:
   - Member, Events, and Sevas are direct links without dropdown indicators and currently point to the public home page because standalone destination routes are unavailable.
 - Top member header with welcome text, role badge, and logout button.
 - A responsive sidebar shows one major section at a time: Overview, Maaladharan, Home Pooja where available, Donations, Seva & Volunteering, and Board/Admin Administration. Mobile uses a compact selector, and the single-line Feedback & Suggestions link opens the standalone form in a new tab.
+- The Irumudi Kettu member section pre-populates active Maaladharan Swamies, derives the current Padi as the previous count plus one, supports corrections, and allows additional Swamies or non-Swamy devotees. Tampa travelers may select with or without Irumudi for headcount; a female non-Swamy selecting Tampa with Irumudi must confirm that Irumudi will occur in Tampa and accommodation will be self-managed. Selecting AAYSSA Irumudi on December 12 requires no Tampa details. Displayed estimates match Maaladharan: approximately $340/person for Tampa and $60/person for AAYSSA.
 - After authentication, shows a “Stay connected” link to the AAYSSA Family WhatsApp group; the public login/sign-up embed does not show WhatsApp links.
 - An unauthenticated portal visit links directly to the deployed portal login form; do not use the removed public `/member-login` route.
 - Family details card with edit controls.
@@ -328,7 +339,7 @@ Member portal (`public/index.html`) includes:
 
 Board/Admin dashboard includes:
 
-- A secondary tab bar organizes the administration area into Overview, Maaladharan, Home Pooja & RSVP, and Member Directory panels so only one administrative category is visible at a time.
+- A secondary tab bar organizes the administration area into Overview, Maaladharan, Irumudi Kettu, Home Pooja & RSVP, and Member Directory panels so only one administrative category is visible at a time.
 - Registered families.
 - Total people.
 - Adults.

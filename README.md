@@ -22,6 +22,7 @@ Source code and release history are maintained in the [AAYSSA IT GitHub organiza
 - Passwordless email-passcode authentication for members and spouses
 - Household membership and contact management
 - Maaladharan registration
+- Irumudi Kettu and Tampa Yatra attendance planning
 - Home Pooja reservations, invitations, and public calendar
 - Event RSVP tracking with adult and kid attendance counts
 - Volunteer interests and family volunteer records

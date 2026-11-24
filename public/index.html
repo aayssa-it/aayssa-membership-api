@@ -2700,6 +2700,7 @@
   let currentVolunteers = [];
   let currentDonations = null;
   let currentMaaladharan = null;
+  let currentIrumudi = null;
   let currentHomePooja = null;
   let homePoojaCalendarMonth = "";
   const HOME_POOJA_MEMBER_OPENS_AT =
@@ -3147,6 +3148,18 @@
         registrations: [],
         error: error.message
       };
+    }
+  }
+
+  async function loadIrumudiResponses() {
+    try {
+      const response = await fetch("/api/my-volunteers?resource=irumudi", { credentials: "include" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to load Irumudi responses.");
+      return data;
+    } catch (error) {
+      console.error("Irumudi response load error:", error);
+      return { participants: [], error: error.message };
     }
   }
 
@@ -4380,6 +4393,122 @@
     `;
   }
 
+
+  function renderIrumudiSection(data) {
+    const participants = Array.isArray(data?.participants) ? data.participants : [];
+    return `
+      <section id="irumudiSection" class="section-card maaladharan-card">
+        <div class="section-heading-row">
+          <h2>Irumudi Kettu</h2>
+          <span class="status-badge">2026 Tampa &amp; AAYSSA</span>
+        </div>
+        <p class="maaladharan-intro">
+          Confirm every devotee joining the Tampa Yatra on December 5, including devotees traveling without Irumudi. Swamies registered through Maaladharan are pre-populated below.
+        </p>
+        <div class="maaladharan-schedule">
+          <div class="maaladharan-date"><strong>Tampa Yatra · December 5</strong>Shared bus expense approximately $340 per person</div>
+          <div class="maaladharan-date"><strong>AAYSSA Irumudi · December 12</strong>Estimated cost approximately $60 per person</div>
+        </div>
+        ${data?.error ? `<p class="inline-message error">${escapeHtml(data.error)}</p>` : ""}
+        <div id="irumudiMessage" class="inline-message" role="status"></div>
+        ${participants.length
+          ? participants.map(renderIrumudiParticipantForm).join("")
+          : `<p class="section-description">No Maaladharan response was found. Add each Swamy or devotee joining the Tampa Yatra.</p>`}
+        <details class="home-pooja-admin-dropdown">
+          <summary>Add another Swamy or devotee</summary>
+          <div class="home-pooja-admin-dropdown-content">
+            ${renderIrumudiParticipantForm({ source: "Additional Devotees", category: "Non-Swamy", participation: "Tampa without Irumudi" }, true)}
+          </div>
+        </details>
+      </section>`;
+  }
+
+  function renderIrumudiParticipantForm(participant = {}, isNew = false) {
+    const isAayssa = participant.participation === "AAYSSA Irumudi";
+    const isSwamy = participant.category === "Swamy";
+    const showAgreement = participant.category === "Non-Swamy" && participant.gender === "Female" && participant.participation === "Tampa with Irumudi";
+    return `
+      <form class="maaladharan-form irumudi-form" data-new="${isNew}" data-id="${escapeHtml(participant.id || "")}" data-maaladharan-id="${escapeHtml(participant.maaladharanId || "")}">
+        <div class="form-field full-width">
+          <label>Participation</label>
+          <select name="participation" required>
+            <option value="">Select an option</option>
+            <option value="Tampa with Irumudi" ${participant.participation === "Tampa with Irumudi" ? "selected" : ""}>Tampa Yatra — with Irumudi — December 5</option>
+            <option value="Tampa without Irumudi" ${participant.participation === "Tampa without Irumudi" ? "selected" : ""}>Tampa Yatra — without Irumudi (headcount only) — December 5</option>
+            <option value="AAYSSA Irumudi" ${isAayssa ? "selected" : ""}>AAYSSA Ayyappa Irumudi — December 12</option>
+          </select>
+        </div>
+        <div class="form-field full-width">
+          <label>Participant Name</label>
+          <input name="participantName" value="${escapeHtml(participant.participantName || "")}" required>
+        </div>
+        <div class="irumudi-tampa-fields full-width" ${isAayssa ? "hidden" : ""}>
+          <div class="maaladharan-form">
+            <div class="form-field"><label>Participant</label><select name="category"><option value="Swamy" ${isSwamy ? "selected" : ""}>Swamy</option><option value="Non-Swamy" ${participant.category === "Non-Swamy" ? "selected" : ""}>Non-Swamy devotee</option></select></div>
+            <div class="form-field"><label>Gender</label><select name="gender"><option value="">Select</option>${["Male", "Female", "Other", "Prefer not to say"].map(value => `<option ${participant.gender === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}</select></div>
+            <div class="form-field"><label>Age</label><input name="age" type="number" min="1" max="120" value="${escapeHtml(participant.age || "")}"></div>
+            <div class="form-field"><label>Phone Number</label><input name="phone" type="tel" value="${escapeHtml(participant.phone || "")}"></div>
+            <div class="form-field"><label>Email</label><input name="email" type="email" value="${escapeHtml(participant.email || "")}"></div>
+            <div class="form-field irumudi-padi-fields" ${isSwamy ? "" : "hidden"}><label>Previous Padi Count</label><input name="priorPadi" type="number" min="0" value="${escapeHtml(participant.priorPadi ?? "")}"></div>
+            <div class="form-field irumudi-padi-fields" ${isSwamy ? "" : "hidden"}><label>Current Padi Count</label><input name="currentPadi" type="number" min="1" value="${escapeHtml(participant.currentPadi ?? "")}"><span class="field-help">Pre-filled as the prior count + 1; update if needed.</span></div>
+            <label class="checkbox-label full-width irumudi-agreement" ${showAgreement ? "" : "hidden"}><input name="agreement" type="checkbox" ${participant.agreement ? "checked" : ""}> I agree that Irumudi will be completed in Tampa and hotel accommodation, if needed, will be managed by the participant.</label>
+          </div>
+        </div>
+        <div class="form-field full-width"><label>Notes (optional)</label><textarea name="notes" maxlength="1000">${escapeHtml(participant.notes || "")}</textarea></div>
+        <input name="source" type="hidden" value="${escapeHtml(participant.source || "Additional Devotees")}">
+        <div class="form-actions full-width">
+          <button class="small-action-button" type="submit">${isNew ? "Add Devotee" : "Save Response"}</button>
+          ${!isNew && participant.id && participant.source === "Additional Devotees" ? '<button class="danger-button" type="button" data-action="remove-irumudi">Remove</button>' : ""}
+        </div>
+      </form>`;
+  }
+
+  function setupIrumudiForms() {
+    document.querySelectorAll(".irumudi-form").forEach(form => {
+      const updateVisibility = () => {
+        const aayssa = form.elements.participation.value === "AAYSSA Irumudi";
+        form.querySelector(".irumudi-tampa-fields").hidden = aayssa;
+        const swamy = form.elements.category.value === "Swamy";
+        form.querySelectorAll(".irumudi-padi-fields").forEach(field => field.hidden = !swamy);
+        const agreement = !aayssa && !swamy && form.elements.gender.value === "Female" && form.elements.participation.value === "Tampa with Irumudi";
+        form.querySelector(".irumudi-agreement").hidden = !agreement;
+      };
+      form.elements.participation.addEventListener("change", updateVisibility);
+      form.elements.category.addEventListener("change", updateVisibility);
+      form.elements.gender.addEventListener("change", updateVisibility);
+      form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const values = Object.fromEntries(new FormData(form));
+        values.id = form.dataset.id || null;
+        values.maaladharanId = form.dataset.maaladharanId || null;
+        values.agreement = form.elements.agreement.checked;
+        await saveIrumudiResponse(values, form);
+      });
+      form.querySelector('[data-action="remove-irumudi"]')?.addEventListener("click", async () => {
+        await saveIrumudiResponse({ id: form.dataset.id }, form, "DELETE");
+      });
+      updateVisibility();
+    });
+  }
+
+  async function saveIrumudiResponse(values, form, method = "POST") {
+    const message = document.getElementById("irumudiMessage");
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch("/api/my-volunteers?resource=irumudi", { method, credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to save response.");
+      currentIrumudi = data;
+      const section = document.getElementById("irumudiSection");
+      section.outerHTML = renderIrumudiSection(data);
+      setupIrumudiForms();
+    } catch (error) {
+      message.className = "inline-message error";
+      message.textContent = error.message;
+      if (button) button.disabled = false;
+    }
+  }
 
   function displayPadiOption(option) {
 
@@ -8354,6 +8483,7 @@
           loadMyVolunteers(),
           loadMyDonations(),
           loadMaaladharanRegistrations(),
+          loadIrumudiResponses(),
           canAccessHomePooja(member.role)
             ? loadHomePoojaBookings()
             : Promise.resolve(null)
@@ -8370,7 +8500,8 @@
       const maaladharan = optionalValue(2, {
         registrations: []
       });
-      const homePooja = optionalValue(3, null);
+      const irumudi = optionalValue(3, { participants: [] });
+      const homePooja = optionalValue(4, null);
 
       currentVolunteers =
         volunteers;
@@ -8380,6 +8511,9 @@
 
       currentMaaladharan =
         maaladharan;
+
+      currentIrumudi =
+        irumudi;
 
       currentHomePooja =
         homePooja;
@@ -8430,6 +8564,7 @@
           aria-label="Portal section">
           <option value="overview">Overview</option>
           <option value="maaladharan">Maaladharan</option>
+          <option value="irumudi">Irumudi Kettu</option>
           ${canAccessHomePooja(member.role)
             ? '<option value="home-pooja">Home Pooja</option>'
             : ""}
@@ -8463,6 +8598,8 @@
               data-portal-target="overview">Overview</button>
             <button class="portal-nav-button" type="button"
               data-portal-target="maaladharan">Maaladharan</button>
+            <button class="portal-nav-button" type="button"
+              data-portal-target="irumudi">Irumudi Kettu</button>
             ${canAccessHomePooja(member.role)
               ? '<button class="portal-nav-button" type="button" data-portal-target="home-pooja">Home Pooja</button>'
               : ""}
@@ -8508,6 +8645,12 @@
             <section class="portal-panel" data-portal-panel="maaladharan" hidden>
               <div class="grid">
                 ${renderMaaladharanSection(currentMaaladharan)}
+              </div>
+            </section>
+
+            <section class="portal-panel" data-portal-panel="irumudi" hidden>
+              <div class="grid">
+                ${renderIrumudiSection(currentIrumudi)}
               </div>
             </section>
 
@@ -8566,6 +8709,7 @@
       setupVolunteerEditing();
       setupProfileEditing();
       setupMaaladharanForm();
+      setupIrumudiForms();
       setupPortalNavigation();
       scheduleHomePoojaLaunchRefresh();
       if (canAccessHomePooja(member.role)) {
@@ -8656,6 +8800,10 @@
         if (target === "feedback") {
           loadFeedbackAdmin();
         }
+
+        if (target === "irumudi") {
+          loadIrumudiAdmin();
+        }
       });
     });
 
@@ -8663,6 +8811,43 @@
   }
 
   let feedbackAdminLoaded = false;
+
+  let irumudiAdminLoaded = false;
+
+  async function loadIrumudiAdmin() {
+    const container = document.getElementById("irumudiAdminContent");
+    if (!container || irumudiAdminLoaded) return;
+    container.innerHTML = '<div class="dashboard-loading">Loading Irumudi summary…</div>';
+    try {
+      const response = await fetch("/api/admin-members?resource=irumudi", { credentials: "include" });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to load Irumudi summary.");
+      const summary = data.summary || {};
+      const participants = Array.isArray(data.participants) ? data.participants : [];
+      container.innerHTML = `
+        <h3>Irumudi Kettu &amp; Tampa Yatra Summary</h3>
+        <p class="directory-subtitle">December 5 Tampa headcount and December 12 AAYSSA Irumudi selections.</p>
+        <div class="dashboard-grid">
+          ${[
+            ["Tampa Total", summary.tampaTotal],
+            ["Tampa Swamies", summary.tampaSwamies],
+            ["Tampa Non-Swamies", summary.tampaNonSwamies],
+            ["With Irumudi", summary.tampaWithIrumudi],
+            ["Without Irumudi", summary.tampaWithoutIrumudi],
+            ["AAYSSA Dec 12", summary.aayssaIrumudi]
+          ].map(([label, count]) => `<div class="dashboard-card"><span class="dashboard-number">${Number(count) || 0}</span><span>${escapeHtml(label)}</span></div>`).join("")}
+        </div>
+        <div class="rsvp-table-wrapper">
+          <table class="rsvp-table">
+            <thead><tr><th>Name</th><th>Participation</th><th>Type</th><th>Gender</th><th>Age</th><th>Current Padi</th><th>Contact</th></tr></thead>
+            <tbody>${participants.length ? participants.map(item => `<tr><td><strong>${escapeHtml(item.participantName)}</strong></td><td>${escapeHtml(item.participation)}</td><td>${escapeHtml(item.category || "—")}</td><td>${escapeHtml(item.gender || "—")}</td><td>${escapeHtml(item.age || "—")}</td><td>${escapeHtml(item.currentPadi ?? "—")}</td><td>${escapeHtml(item.phone || item.email || "—")}</td></tr>`).join("") : '<tr><td colspan="7">No responses yet.</td></tr>'}</tbody>
+          </table>
+        </div>`;
+      irumudiAdminLoaded = true;
+    } catch (error) {
+      container.innerHTML = `<div class="error">${escapeHtml(error.message)}</div>`;
+    }
+  }
 
   async function loadFeedbackAdmin(force = false) {
     const container = document.getElementById("feedbackAdminContent");
@@ -9008,6 +9193,10 @@
             Maaladharan
           </button>
           <button class="admin-dashboard-tab" type="button" role="tab"
+            data-admin-dashboard-tab="irumudi" aria-selected="false">
+            Irumudi Kettu
+          </button>
+          <button class="admin-dashboard-tab" type="button" role="tab"
             data-admin-dashboard-tab="home-pooja" aria-selected="false">
             ${isRsvpEnabled() ? "Home Pooja &amp; RSVP" : "Home Pooja"}
           </button>
@@ -9226,6 +9415,13 @@
           ${renderMaaladharanDashboard(
             maaladharanSummary
           )}
+        </section>
+
+        <section class="admin-dashboard-panel" hidden
+          data-admin-dashboard-panel="irumudi">
+          <div class="dashboard-card full-width" id="irumudiAdminContent">
+            <div class="dashboard-loading">Open this tab to review Irumudi and Tampa participation.</div>
+          </div>
         </section>
 
         <section class="admin-dashboard-panel" hidden

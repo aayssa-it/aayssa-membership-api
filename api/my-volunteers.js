@@ -15,6 +15,7 @@ import {
 import {
   handleMemberRsvps
 } from "./_lib/rsvp.js";
+import { handleMemberIrumudi } from "./_lib/irumudi.js";
 
 export default async function handler(req, res) {
   if (req.query?.resource === "maaladharan") {
@@ -27,6 +28,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "rsvp") {
     return handleMemberRsvps(req, res);
+  }
+
+  if (req.query?.resource === "irumudi") {
+    return handleMemberIrumudi(req, res);
   }
 
   if (req.method !== "GET") {

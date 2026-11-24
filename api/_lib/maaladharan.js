@@ -1024,6 +1024,14 @@ function mapRegistrationRow(row, fields) {
       Number(
         row[fieldKey(fields, "Age")] || 0
       ),
+    phoneNumber:
+      cleanString(
+        row[fieldKey(fields, "Phone Number")]
+      ),
+    email:
+      cleanString(
+        row[fieldKey(fields, "Email")]
+      ).toLowerCase(),
     maaladharanDate:
       cleanString(
         row[fieldKey(fields, "Maaladharan Date")]
@@ -1049,6 +1057,38 @@ function mapRegistrationRow(row, fields) {
         row[fieldKey(fields, "Member Notes")]
       )
   };
+}
+
+export async function fetchFamilyMaaladharanRegistrations(auth) {
+  const fields = await fetchRegistrationFields();
+  await linkUnlinkedRegistrationsByEmail(
+    auth.normalizedEmail,
+    auth.memberRow.id,
+    fields
+  );
+  return fetchFamilyRegistrations(auth.memberRow.id, fields);
+}
+
+export async function fetchAllMaaladharanRegistrations() {
+  const fields = await fetchRegistrationFields();
+  const rows = [];
+  let page = 1;
+
+  while (true) {
+    const response = await fetch(
+      `${getBaserowBaseUrl()}/api/database/rows/table/${TABLE_ID}/?user_field_names=false&page=${page}&size=200`,
+      { headers: getBaserowHeaders() }
+    );
+    if (!response.ok) {
+      throw new Error("Unable to load Maaladharan registrations.");
+    }
+    const data = await response.json();
+    rows.push(...(Array.isArray(data.results) ? data.results : []));
+    if (!data.next) break;
+    page += 1;
+  }
+
+  return rows.map(row => mapRegistrationRow(row, fields));
 }
 
 function normalizeRegistrationUpdate(body) {

@@ -10,6 +10,7 @@ import {
 import {
   handleAdminCampaigns
 } from "./_lib/campaigns.js";
+import { handleAdminIrumudi } from "./_lib/irumudi.js";
 import {
   VOLUNTEER_FIELDS,
   VOLUNTEERS_TABLE_ID,
@@ -36,6 +37,10 @@ export default async function handler(req, res) {
 
   if (req.query?.resource === "app-campaigns") {
     return handleAdminCampaigns(req, res);
+  }
+
+  if (req.query?.resource === "irumudi") {
+    return handleAdminIrumudi(req, res);
   }
 
   if (req.method !== "GET") {
