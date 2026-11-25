@@ -259,6 +259,10 @@
       line-height: 1;
     }
 
+    .portal-mobile-navigation {
+      display: none;
+    }
+
     .portal-mobile-selector {
       display: none;
       width: 100%;
@@ -2328,6 +2332,40 @@
 
       .portal-mobile-selector {
         display: block;
+        min-height: 52px;
+        margin: 8px 0 0;
+        padding: 12px 14px;
+        border: 2px solid #f2c36d;
+        background: #fff;
+        color: #4d2909;
+        font-size: 17px;
+        box-shadow: 0 2px 8px rgba(62, 30, 5, 0.18);
+      }
+
+      .portal-mobile-navigation {
+        display: block;
+        margin-bottom: 18px;
+        padding: 14px;
+        border: 1px solid #7b2f08;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #7b2607, #a64b0a);
+        box-shadow: 0 5px 16px rgba(69, 31, 5, 0.22);
+      }
+
+      .portal-mobile-navigation label {
+        display: block;
+        color: #fff;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .portal-mobile-navigation-hint {
+        display: block;
+        margin-top: 2px;
+        color: #ffe4b0;
+        font-size: 12px;
+        font-weight: 600;
       }
 
       .portal-mobile-feedback {
@@ -8613,21 +8651,24 @@
 
         </div>
 
-        <select id="portalSectionSelect"
-          class="portal-mobile-selector"
-          aria-label="Portal section">
-          <option value="overview">Overview</option>
-          <option value="maaladharan">Maaladharan</option>
-          <option value="irumudi">Irumudi Kettu</option>
-          ${canAccessHomePooja(member.role)
-            ? '<option value="home-pooja">Home Pooja</option>'
-            : ""}
-          <option value="donations">Donations</option>
-          <option value="seva">Seva &amp; Volunteering</option>
-          ${hasDashboardAccess(member.role)
-            ? '<option value="administration">Administration</option>'
-            : ""}
-        </select>
+        <div class="portal-mobile-navigation">
+          <label for="portalSectionSelect">Member Portal Menu</label>
+          <span class="portal-mobile-navigation-hint">Tap below to choose a section</span>
+          <select id="portalSectionSelect"
+            class="portal-mobile-selector">
+            <option value="overview">Overview</option>
+            <option value="maaladharan">Maaladharan</option>
+            <option value="irumudi">Irumudi Kettu</option>
+            ${canAccessHomePooja(member.role)
+              ? '<option value="home-pooja">Home Pooja</option>'
+              : ""}
+            <option value="donations">Donations</option>
+            <option value="seva">Seva &amp; Volunteering</option>
+            ${hasDashboardAccess(member.role)
+              ? '<option value="administration">Administration</option>'
+              : ""}
+          </select>
+        </div>
 
         <a class="portal-mobile-feedback" href="/feedback.html"
           target="_blank" rel="noopener noreferrer">
