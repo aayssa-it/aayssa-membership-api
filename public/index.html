@@ -4532,7 +4532,7 @@
             <div class="form-field"><label>Age</label><input name="age" type="number" min="1" max="120" value="${escapeHtml(participant.age || "")}"></div>
             <div class="form-field"><label>Phone Number</label><input name="phone" type="tel" value="${escapeHtml(participant.phone || "")}"></div>
             <div class="form-field"><label>Email</label><input name="email" type="email" value="${escapeHtml(participant.email || "")}"></div>
-            <div class="form-field irumudi-padi-fields" ${isSwamy ? "" : "hidden"}><label>Previous Padi Count</label><input name="priorPadi" type="number" min="0" value="${escapeHtml(participant.priorPadi ?? "")}"></div>
+            <div class="form-field irumudi-padi-fields" ${isSwamy ? "" : "hidden"}><label>Completed Padi Count</label><input name="priorPadi" type="number" min="0" value="${escapeHtml(participant.priorPadi ?? "")}"></div>
             <div class="form-field irumudi-padi-fields" ${isSwamy ? "" : "hidden"}><label>Current Padi Count</label><input name="currentPadi" type="number" min="1" value="${escapeHtml(participant.currentPadi ?? "")}"><span class="field-help">Pre-filled as the prior count + 1; update if needed.</span></div>
             <label class="checkbox-label full-width irumudi-agreement" ${showAgreement ? "" : "hidden"}><input name="agreement" type="checkbox" ${participant.agreement ? "checked" : ""}> I agree that Irumudi will be completed in Tampa and hotel accommodation, if needed, will be managed by the participant.</label>
           </div>
